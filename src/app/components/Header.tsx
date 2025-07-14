@@ -1,69 +1,83 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import Link from 'next/link'
+import Image from 'next/image'
+import { useState } from 'react'
+import { ThemeSwitch } from './ThemeSwitch'
 import { HiMenu, HiX } from 'react-icons/hi';
 
-const Header = () => {
+export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const navLinks = [
-    { href: '#about', label: 'About' },
-    { href: '#experience', label: 'Experience' },
-    { href: '#skills', label: 'Skills' },
-    { href: '#contact', label: 'Contact' },
-  ];
+  const navLinks = ['About', 'Experience', 'Skills', 'Contact'];
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-background/80 backdrop-blur-sm shadow-md z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo / Home Link */}
-          <Link href="#home" className="text-2xl font-bold text-primary">
-            YosuaF.
-          </Link>
-
+    <header className="fixed w-full bg-background/80 backdrop-blur-md z-50 shadow-sm">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        {/* Logo and Name */}
+        <Link href="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+          <Image 
+            src="/images/logo.png" 
+            alt="Yosua Ferdian Logo"
+            width={40}
+            height={40}
+            className="rounded-full object-cover h-10 w-10 border-2 border-primary"
+          />
+          <span className="text-xl font-bold text-foreground">
+            Yosua Ferdian
+          </span>
+        </Link>
+        
+        <div className="flex items-center gap-6">
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-foreground hover:text-primary transition-colors"
+          <nav className="hidden md:flex gap-6">
+            {navLinks.map((item) => (
+              <Link 
+                key={item} 
+                href={`#${item.toLowerCase()}`}
+                className="font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                {link.label}
+                {item}
               </Link>
             ))}
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Desktop Theme Switch (hidden on mobile) */}
+          <div className="hidden md:block">
+            <ThemeSwitch />
+          </div>
+
+          {/* Mobile Menu Button (hamburger icon) */}
           <div className="md:hidden">
-            <button onClick={() => setMenuOpen(!menuOpen)} className="text-foreground text-2xl">
+            <button onClick={() => setMenuOpen(!menuOpen)} className="text-2xl text-foreground">
               {menuOpen ? <HiX /> : <HiMenu />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Dropdown Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-muted">
-          <nav className="flex flex-col items-center gap-4 py-4">
-            {navLinks.map((link) => (
+        <div className="md:hidden bg-muted py-4">
+          <nav className="flex flex-col items-center gap-4">
+            {navLinks.map((item) => (
               <Link
-                key={link.href}
-                href={link.href}
-                className="text-foreground hover:text-primary transition-colors"
-                onClick={() => setMenuOpen(false)} // Close menu on click
+                key={item}
+                href={`#${item.toLowerCase()}`}
+                className="font-medium text-foreground hover:text-primary transition-colors"
+                onClick={() => setMenuOpen(false)} // Close menu on link click
               >
-                {link.label}
+                {item}
               </Link>
             ))}
+            {/* Theme Switch inside the mobile menu */}
+            <div className="flex items-center justify-between w-full px-8 pt-4 mt-4 border-t border-background">
+              <span className="font-medium text-foreground">Switch Theme</span>
+              <ThemeSwitch />
+            </div>
           </nav>
         </div>
       )}
     </header>
-  );
-};
-
-export default Header;
+  )
+}
