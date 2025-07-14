@@ -1,90 +1,94 @@
-// src/app/components/Skills.tsx
-
 import React from 'react';
-import {
-  HiCode,
-  HiServer,
-  HiDesktopComputer,
-  HiDatabase,
-  HiAdjustments
-} from 'react-icons/hi';
-import { SiGoogleads, SiGoogleanalytics, SiGoogle, SiNextdotjs, SiLaravel, SiCpanel, SiLinux, SiGit, SiMysql, SiWordpress } from 'react-icons/si';
+import DynamicIcon from './DynamicIcon'; // Import our new dynamic component
 
-// Updated and categorized skills data from your CV
-const skillCategories = [
-  {
-    title: 'Google Ecosystem',
-    icon: <SiGoogle className="h-8 w-8 text-primary" />,
-    skills: [
-      { name: 'Google Ads', icon: <SiGoogleads /> },
-      { name: 'Google Analytics', icon: <SiGoogleanalytics /> },
-      { name: 'Google Tag Manager', icon: <HiAdjustments /> },
-      { name: 'Google Merchant Center', icon: <HiDesktopComputer /> },
-    ],
-  },
-  {
-    title: 'Web & Frontend',
-    icon: <HiCode className="h-8 w-8 text-primary" />,
-    skills: [
-      { name: 'Next.JS', icon: <SiNextdotjs /> },
-      { name: 'Laravel', icon: <SiLaravel /> },
-      { name: 'HTML & CSS', icon: <HiCode /> },
-      { name: 'Wordpress', icon: <SiWordpress /> },
-      { name: 'Rest API', icon: <HiCode /> },
-    ],
-  },
-  {
-    title: 'Server & Hosting',
-    icon: <HiServer className="h-8 w-8 text-primary" />,
-    skills: [
-      { name: 'WHM & cPanel', icon: <SiCpanel /> },
-      { name: 'Linux System Admin', icon: <SiLinux /> },
-      { name: 'Network Infrastructure', icon: <HiServer /> },
-      { name: 'System Monitoring', icon: <HiDesktopComputer /> },
-      { name: 'Bash Scripting', icon: <HiCode /> },
-    ],
-  },
-  {
-    title: 'Tools & General Tech',
-    icon: <HiDatabase className="h-8 w-8 text-primary" />,
-    skills: [
-      { name: 'Git', icon: <SiGit /> },
-      { name: 'MySQL', icon: <SiMysql /> },
-      { name: 'Technical Support', icon: <HiDesktopComputer /> },
-      { name: 'Payment Platforms', icon: <HiDesktopComputer /> },
-    ],
-  },
-];
+// Define the shape of the data from the API
+interface Skill {
+  id: number;
+  name: string;
+  icon: string;
+  category: string;
+}
 
-const Skills = () => {
+interface SkillCategory {
+  '@id': string;
+  id: number;
+  title: string;
+  icon: string;
+  skills: Skill[];
+}
+
+// Fetch and group the data
+async function getGroupedSkills(): Promise<SkillCategory[]> {
+  try {
+    const categoriesUrl = `${process.env.API_BASE_URL}/api/skill_categories`;
+    const skillsUrl = `${process.env.API_BASE_URL}/api/skills`;
+
+    const [categoriesRes, skillsRes] = await Promise.all([
+      fetch(categoriesUrl),
+      fetch(skillsUrl),
+    ]);
+
+    if (!categoriesRes.ok || !skillsRes.ok) {
+      throw new Error('Failed to fetch skills or categories');
+    }
+
+    const categoriesData = await categoriesRes.json();
+    const skillsData = await skillsRes.json();
+
+    // console.log('--- Successful API Response (data) ---', JSON.stringify(categoriesData, null, 2));
+    // console.log('--- Successful API Response (data) ---', JSON.stringify(skillsData, null, 2));
+
+    const categories = categoriesData['hydra:member'] || [];
+    const allSkills = skillsData['hydra:member'] || [];
+
+    // Group the flat list of skills into their respective categories
+    const groupedSkills = categories.map((category: any) => ({
+      ...category,
+      skills: allSkills.filter((skill: Skill) => skill.category === category['@id']),
+    }));
+
+    return groupedSkills;
+  } catch (error) {
+    console.error('--- Error in getGroupedSkills function ---', error);
+    return []; 
+  }
+}
+
+// The main async component that renders everything
+const Skills = async () => {
+  const skillCategories = await getGroupedSkills();
+
   return (
-    <section id="skills" className="py-20 bg-background"> {/* Before: bg-white dark:bg-gray-800 */}
+    <section id="skills" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <h2 className="section-title">Skills & Expertise</h2>
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {skillCategories.map((category, index) => (
-            <div
-              key={index}
-              className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" // Before: bg-gray-50 dark:bg-gray-700
-            >
-              <div className="flex items-center mb-4">
-                {/* The icon itself uses text-primary, which is now theme-aware! */}
-                {category.icon}
-                <h3 className="text-xl font-bold ml-4 text-foreground">{category.title}</h3> {/* Before: text-gray-800 dark:text-white */}
+
+        {skillCategories.length === 0 ? (
+          <p className="text-center mt-8 text-muted-foreground">Could not load skills at this time.</p>
+        ) : (
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {skillCategories.map((category) => (
+              <div 
+                key={category.id}
+                className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="flex items-center mb-6">
+                  <DynamicIcon name={category.icon} className="text-primary text-3xl" />
+                  <h3 className="text-xl font-bold ml-3 text-foreground">{category.title}</h3>
+                </div>
+                
+                <ul className="space-y-4">
+                  {category.skills && category.skills.map((skill) => (
+                    <li key={skill.id} className="flex items-center text-muted-foreground">
+                      <DynamicIcon name={skill.icon} className="text-primary mr-3 text-xl" />
+                      <span>{skill.name}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-3">
-                {category.skills.map((skill, i) => (
-                  <li key={i} className="flex items-center text-muted-foreground"> {/* Before: text-gray-700 dark:text-gray-300 */}
-                    <div className="text-primary mr-3 text-lg"> {/* The icon color */}
-                      {skill.icon}
-                    </div>
-                    <span>{skill.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
