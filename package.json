@@ -11,16 +11,20 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@heroicons/react": "^2.2.0",
+    "@tabler/icons-react": "^3.34.0",
     "@types/node": "20.11.19",
     "@types/react": "18.2.56",
+    "clsx": "^2.1.1",
     "dompurify": "^3.2.6",
     "lucide-react": "^0.523.0",
+    "motion": "^12.23.6",
     "next": "14.1.0",
     "next-themes": "^0.4.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-google-recaptcha": "^3.1.0",
     "react-icons": "^5.5.0",
+    "tailwind-merge": "^3.3.1",
     "typescript": "5.3.3"
   },
   "devDependencies": {

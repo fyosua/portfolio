@@ -1,6 +1,7 @@
 import React from 'react';
+import { Timeline, TimelineItem } from './ui/timeline';
 
-// Defines the shape of your experience data from the API
+// Interface for API data
 interface Experience {
   id: number;
   role: string;
@@ -11,68 +12,53 @@ interface Experience {
   responsibilities: string[];
 }
 
-// Fetches the data from your API
+// Fetches the data from your API (this function remains the same)
 async function getExperiences(): Promise<Experience[]> {
   try {
     const fetchUrl = `${process.env.API_BASE_URL}/api/experiences`;
     const res = await fetch(fetchUrl);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(errorText);
-      throw new Error(`Request failed with status ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error('Failed to fetch experiences');
     const data = await res.json();
-    // console.log('--- Successful API Response (data) ---', JSON.stringify(data, null, 2));
-    
-    // THIS IS THE CORRECTED LINE
     return data['hydra:member'] || [];
-
   } catch (error) {
     console.error('--- Error in getExperiences function ---', error);
-    return []; 
+    return [];
   }
 }
 
-// The component is async to allow for data fetching before rendering
 const Experience = async () => {
   const experiences = await getExperiences();
 
-  if (experiences.length === 0) {
-    return (
-      <section id="experience" className="py-20 bg-muted">
-        <div className="container mx-auto px-4">
-          <h2 className="section-title">Work Experience</h2>
-          <p className="text-center mt-8 text-muted-foreground">Could not load work experience at this time.</p>
-        </div>
-      </section>
-    );
-  }
+  // Format the API data into the rich structure the Timeline component needs
+  const timelineItems: TimelineItem[] = experiences.map(exp => ({
+    id: exp.id,
+    title: exp.date, // The date will be the sticky title on the side
+    content: (
+      <div className="bg-muted p-6 rounded-lg border border-primary/10 shadow-sm">
+        <h4 className="text-xl font-semibold text-foreground">{exp.role}</h4>
+        <p className="font-medium text-primary mt-1">{exp.company} - 📍 {exp.location}</p>
+        <p className="italic my-4 text-muted-foreground">{exp.summary}</p>
+        <div className="border-t border-muted-foreground/20 my-4"></div>
+        <h5 className="font-semibold text-foreground mb-2">Key Responsibilities:</h5>
+        <ul className="list-disc list-outside space-y-2 pl-4 text-muted-foreground">
+          {exp.responsibilities.map((point, i) => (
+            <li key={i}>{point}</li>
+          ))}
+        </ul>
+      </div>
+    ),
+  }));
 
   return (
-    <section id="experience" className="py-20 bg-muted">
+    <section id="experience" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <h2 className="section-title">Work Experience</h2>
-        <div className="mt-12">
-          <div className="relative border-l-4 border-primary ml-4">
-            {experiences.map((exp) => (
-              <div key={exp.id} className="mb-10 ml-8">
-                <div className="absolute w-6 h-6 bg-primary rounded-full -left-3.5 border-4 border-background"></div>
-                <p className="text-sm font-semibold text-primary">{exp.date}</p>
-                <h3 className="text-2xl font-bold text-foreground">{exp.role}</h3>
-                <h4 className="text-lg font-semibold text-muted-foreground">
-                  {exp.company} - 📍 {exp.location}
-                </h4>
-                <p className="mt-2 text-foreground italic">{exp.summary}</p>
-                <ul className="mt-4 list-disc list-inside space-y-2 text-muted-foreground">
-                  {exp.responsibilities.map((point, i) => (
-                    <li key={i}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+        <div className="mt-8">
+          {timelineItems.length > 0 ? (
+            <Timeline items={timelineItems} />
+          ) : (
+            <p className="text-center text-muted-foreground">Could not load work experience at this time.</p>
+          )}
         </div>
       </div>
     </section>
