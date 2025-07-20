@@ -11,7 +11,7 @@ interface Language {
 async function getLanguages(): Promise<Language[]> {
   try {
     const fetchUrl = `${process.env.API_BASE_URL}/api/languages`;
-    const res = await fetch(fetchUrl);
+    const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error('Failed to fetch languages');
     const data = await res.json();
     return data['hydra:member'] || [];

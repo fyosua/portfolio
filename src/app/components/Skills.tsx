@@ -24,8 +24,8 @@ async function getGroupedSkills(): Promise<SkillCategory[]> {
     const skillsUrl = `${process.env.API_BASE_URL}/api/skills`;
 
     const [categoriesRes, skillsRes] = await Promise.all([
-      fetch(categoriesUrl),
-      fetch(skillsUrl),
+      fetch(categoriesUrl, { next: { revalidate: 3600 } }),
+      fetch(skillsUrl, { next: { revalidate: 3600 } }),
     ]);
 
     if (!categoriesRes.ok || !skillsRes.ok) {

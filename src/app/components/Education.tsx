@@ -13,7 +13,7 @@ interface EducationData {
 async function getEducation(): Promise<EducationData | null> {
   try {
     const fetchUrl = `${process.env.API_BASE_URL}/api/education`;
-    const res = await fetch(fetchUrl);
+    const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error('Failed to fetch education data');
     const data = await res.json();
     return data['hydra:member']?.[0] || null; // Get the first education entry

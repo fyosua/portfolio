@@ -41,7 +41,7 @@ const ResponsibilitiesList = ({ items }: { items: Responsibility[] }) => {
 async function getExperiences(): Promise<Experience[]> {
   try {
     const fetchUrl = `${process.env.API_BASE_URL}/api/experiences`;
-    const res = await fetch(fetchUrl);
+    const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error('Failed to fetch experiences');
     const data = await res.json();
     return data['hydra:member'] || [];

@@ -4,7 +4,7 @@ import React from 'react';
 async function getAboutContent(): Promise<string> {
   try {
     const fetchUrl = `${process.env.API_BASE_URL}/api/abouts`;
-    const res = await fetch(fetchUrl);
+    const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
 
     if (!res.ok) {
       throw new Error('Failed to fetch about content');
