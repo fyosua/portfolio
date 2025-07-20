@@ -3,6 +3,9 @@ import About from './components/About';
 import Experience from './components/Experience';
 import Skills from './components/Skills';
 import Contact from './components/Contact';
+import Education from './components/Education';
+import Languages from './components/Languages';
+import CVGenerator from './components/CVGenerator';
 import Image from 'next/image';
 
 export default function Home() {
@@ -31,6 +34,7 @@ export default function Home() {
                 <a href="#experience" className="btn-secondary">
                   My Experience
                 </a>
+                <CVGenerator />
               </div>
             </div>
             <div className="md:w-1/2 flex justify-center">
@@ -50,6 +54,8 @@ export default function Home() {
       <About />
       <Experience />
       <Skills />
+      <Education />
+      <Languages />
       <Contact />
     </main>
   )
