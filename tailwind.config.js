@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const { fontFamily } = require("tailwindcss/defaultTheme");
+
 const config = {
   darkMode: "class",
   content: [
@@ -19,9 +21,20 @@ const config = {
           DEFAULT: 'rgb(var(--color-muted) / <alpha-value>)',
           foreground: 'rgb(var(--color-muted-foreground) / <alpha-value>)',
         },
+        border: 'rgb(var(--color-border) / <alpha-value>)', // <-- ADD THIS LINE
       },
+      fontFamily: {
+        // Example: add Shadcn's font stack, fallback to Tailwind's default
+        sans: ['var(--font-sans)', ...fontFamily.sans],
+      },
+      // You can add more Shadcn UI theme extensions here if needed
     },
   },
-  plugins: [],
+  plugins: [
+    require("tailwindcss-animate"), // Shadcn UI recommends this for transitions
+    // require('@tailwindcss/typography'), // Optional: for prose/markdown
+    // require('@tailwindcss/forms'),      // Optional: for better form styles
+  ],
 };
+
 module.exports = config;

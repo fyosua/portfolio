@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { HiOutlineHome, HiOutlineBriefcase, HiOutlineSparkles, HiOutlineLogout } from 'react-icons/hi';
 import Link from 'next/link';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineSparkles, HiOutlineCog, HiOutlineLogout } from 'react-icons/hi';
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
@@ -23,13 +23,14 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     router.push('/admin');
   };
 
-  if (pathname === '/admin') {
-    return <>{children}</>; // Don't show layout on login page
-  }
+  const handleNavClick = (href: string) => {
+    router.push(href);
+  };
 
-  if (!isClient) {
-    return null; // Don't render on the server to avoid flash of content
+  if (pathname === '/admin') {
+    return <>{children}</>;
   }
+  if (!isClient) return null;
 
   const navItems = [
     { href: '/admin/dashboard', icon: <HiOutlineHome />, label: 'Dashboard' },
@@ -39,15 +40,16 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen flex bg-muted/40">
-      {/* Sidebar */}
       <aside className="w-64 bg-background border-r border-muted hidden md:flex flex-col">
         <div className="p-4 border-b border-muted">
-          <h2 className="text-xl font-bold text-primary">Portfolio Admin</h2>
+          <Link href="/admin/dashboard" className="text-xl font-bold text-primary">Portfolio Admin</Link>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map(item => (
-            <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            <button
+              key={item.href}
+              onClick={() => handleNavClick(item.href)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-left ${
                 pathname === item.href
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -55,7 +57,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <span className="text-xl">{item.icon}</span>
               <span>{item.label}</span>
-            </Link>
+            </button>
           ))}
         </nav>
         <div className="p-4 border-t border-muted">
@@ -65,18 +67,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
         </div>
       </aside>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="bg-background border-b border-muted p-4 flex justify-between items-center md:justify-end">
           <div className="md:hidden text-xl font-bold text-primary">Admin</div>
-          <div className="text-foreground">
-            Robert Dorwart {/* Placeholder name from theme */}
-          </div>
+          <div className="text-foreground">Robert Dorwart</div>
         </header>
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );
