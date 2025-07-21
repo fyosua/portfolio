@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import DateRangePicker from './DateRangePicker';
+// import DateRangePicker from './DateRangePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -104,10 +104,10 @@ const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProp
             </div>
             <div>
               <Label htmlFor="date">Date</Label>
-              <DateRangePicker
+              {/* <DateRangePicker
                 initialDateString={formData.date}
                 onDateChange={handleDateChange}
-              />
+              /> */}
             </div>
           </div>
           <Separator className="my-4" />
