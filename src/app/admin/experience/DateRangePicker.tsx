@@ -98,9 +98,7 @@ const DateRangePicker = ({ initialDateString, onDateChange }: DateRangePickerPro
             selected={
               isEndDatePresent
                 ? startDate
-                : startDate
-                  ? { from: startDate, to: endDate }
-                  : undefined
+                : { from: startDate, to: endDate }
             }
             onDayClick={handleDayClick}
             captionLayout="dropdown-buttons"
