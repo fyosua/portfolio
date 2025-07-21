@@ -12,22 +12,23 @@ export default function Home() {
   return (
     <main>
       <Header />
-      
+
       {/* Hero Section */}
       <section className="min-h-screen pt-20 flex items-center">
         <div className="container mx-auto px-4 py-20">
           <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="md:w-1/2">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+            {/* Text Content */}
+            <div className="w-full md:w-1/2 text-center md:text-left">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-foreground">
                 Hi, I'm <span className="text-primary">Yosua Ferdian</span>
               </h1>
-              <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 text-muted-foreground">
                 Google Technical Solutions & Web FullStack Developer
               </h2>
-              <p className="text-lg mb-8 text-muted-foreground">
+              <p className="text-base md:text-lg mb-8 text-muted-foreground">
                 Expert in Google Tracking solutions and web development.
               </p>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-center sm:justify-center md:justify-start">
                 <a href="#contact" className="btn-primary">
                   Contact Me
                 </a>
@@ -37,7 +38,9 @@ export default function Home() {
                 <CVGenerator />
               </div>
             </div>
-            <div className="md:w-1/2 flex justify-center">
+
+            {/* Image Container */}
+            <div className="w-full md:w-1/2 flex justify-center mt-8 md:mt-0">
               <Image
                 src="/images/photo_profile.jpg"
                 alt="Yosua Ferdian"
