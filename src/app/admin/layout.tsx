@@ -10,12 +10,23 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
 
+  // State for profile info
+  const [profile, setProfile] = useState<{ name?: string; title?: string } | null>(null);
+
   useEffect(() => {
     setIsClient(true);
     const token = localStorage.getItem('authToken');
     if (!token && pathname !== '/admin') {
       router.push('/admin');
     }
+    // Fetch profile data
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles`)
+      .then(res => res.json())
+      .then(data => {
+        const user = data['hydra:member']?.[0];
+        setProfile({ name: user?.name, title: user?.title });
+      })
+      .catch(() => setProfile(null));
   }, [router, pathname]);
 
   const handleLogout = () => {
@@ -70,7 +81,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex-1 flex flex-col">
         <header className="bg-background border-b border-muted p-4 flex justify-between items-center md:justify-end">
           <div className="md:hidden text-xl font-bold text-primary">Admin</div>
-          <div className="text-foreground">Robert Dorwart</div>
+          <div className="text-foreground flex flex-col items-end">
+            <span className="font-semibold">{profile?.name || '...'}</span>
+            <span className="text-xs text-muted-foreground">{profile?.title || ''}</span>
+          </div>
         </header>
         <main className="flex-1 p-6">{children}</main>
       </div>
