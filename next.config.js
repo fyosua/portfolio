@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    unoptimized: true,
+    unoptimized: false,
   },
   compress: false,
   productionBrowserSourceMaps: false,
