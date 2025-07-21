@@ -18,10 +18,6 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@react-pdf/renderer": "^4.3.0",
     "@tabler/icons-react": "^3.34.1",
-<<<<<<< HEAD
-    "@types/node": "^24.0.15",
-=======
->>>>>>> 4e288966b632d6639645349e5ca3e296fe1333ff
     "@types/react": "18.2.56",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
