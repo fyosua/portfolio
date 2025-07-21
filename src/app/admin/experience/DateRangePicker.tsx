@@ -99,7 +99,9 @@ const DateRangePicker = ({ initialDateString, onDateChange }: DateRangePickerPro
               isEndDatePresent
                 ? startDate
                 : startDate
-                  ? { from: startDate, to: endDate }
+                  ? endDate
+                    ? { from: startDate, to: endDate }
+                    : { from: startDate, to: startDate }
                   : undefined
             }
             onDayClick={handleDayClick}
@@ -115,9 +117,17 @@ const DateRangePicker = ({ initialDateString, onDateChange }: DateRangePickerPro
                 checked={isEndDatePresent}
                 onChange={handlePresentToggle}
               />
-              <label htmlFor="present" className="text-sm text-muted-foreground">I currently work here</label>
+              <label htmlFor="present" className="text-sm text-muted-foreground">
+                I currently work here
+              </label>
             </div>
-            <button type="button" onClick={() => setShowPicker(false)} className="text-sm btn-secondary py-1 px-3">Close</button>
+            <button
+              type="button"
+              onClick={() => setShowPicker(false)}
+              className="text-sm btn-secondary py-1 px-3"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
