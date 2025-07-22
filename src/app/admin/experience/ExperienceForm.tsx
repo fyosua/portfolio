@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator'; // Add this if you want a divider
+import { Separator } from '@/components/ui/separator';
+import { CalendarIcon } from '@heroicons/react/24/outline'; // or your icon library
 
 interface Responsibility {
   point: string;
@@ -17,9 +18,11 @@ interface FormData {
   role: string;
   company: string;
   location: string;
-  date: string;
+  startDate: string; // ISO string (YYYY-MM)
+  endDate: string | null; // ISO string (YYYY-MM) or null for Present
   summary: string;
   responsibilities: Responsibility[];
+  isPresent?: boolean; // for UI only
 }
 interface ExperienceFormProps {
   onSubmit: (data: FormData) => void;
@@ -29,8 +32,9 @@ interface ExperienceFormProps {
 
 const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProps) => {
   const [formData, setFormData] = useState<FormData>({
-    role: '', company: '', location: '', date: '', summary: '',
+    role: '', company: '', location: '', startDate: '', endDate: '', summary: '',
     responsibilities: [{ point: '', subPoints: [] }],
+    isPresent: false,
   });
 
   useEffect(() => {
@@ -38,14 +42,16 @@ const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProp
       const responsibilities = typeof initialData.responsibilities === 'string'
         ? JSON.parse(initialData.responsibilities)
         : initialData.responsibilities;
-      
+
       setFormData({
         role: initialData.role || '',
         company: initialData.company || '',
         location: initialData.location || '',
-        date: initialData.date || '',
+        startDate: initialData.startDate ? initialData.startDate.slice(0, 7) : '',
+        endDate: initialData.endDate === null ? '' : (initialData.endDate ? initialData.endDate.slice(0, 7) : ''),
         summary: initialData.summary || '',
         responsibilities: responsibilities || [{ point: '', subPoints: [] }],
+        isPresent: initialData.endDate === null,
       });
     }
   }, [initialData]);
@@ -55,16 +61,28 @@ const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProp
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = useCallback((dateString: string) => {
-    setFormData(prev => ({ ...prev, date: dateString }));
-  }, []);
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, startDate: e.target.value }));
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, endDate: e.target.value }));
+  };
+
+  const handlePresentToggle = () => {
+    setFormData(prev => ({
+      ...prev,
+      isPresent: !prev.isPresent,
+      endDate: !prev.isPresent ? '' : prev.endDate,
+    }));
+  };
 
   const handleRespChange = (index: number, value: string) => {
     const newResps = [...formData.responsibilities];
     newResps[index].point = value;
     setFormData(prev => ({ ...prev, responsibilities: newResps }));
   };
-  
+
   const addResponsibility = () => {
     setFormData(prev => ({
       ...prev,
@@ -79,7 +97,10 @@ const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      endDate: formData.isPresent ? null : formData.endDate,
+    });
   };
 
   return (
@@ -102,12 +123,41 @@ const ExperienceForm = ({ onSubmit, initialData, isLoading }: ExperienceFormProp
               <Label htmlFor="location">Location</Label>
               <Input name="location" value={formData.location} onChange={handleChange} className="bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border rounded-lg" />
             </div>
-            <div>
-              <Label htmlFor="date">Date</Label>
-              {/* <DateRangePicker
-                initialDateString={formData.date}
-                onDateChange={handleDateChange}
-              /> */}
+            <div className="md:col-span-2">
+              <Label>Date Range</Label>
+              <div className="flex items-center gap-2 mt-2">
+                {/* Start Date */}
+                <Input
+                  type="month"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleStartDateChange}
+                  required
+                  className="w-[175px] bg-white/70 dark:bg-black/40 border border-border rounded-lg"
+                  style={{ paddingRight: '3.5rem' }}
+                />
+                <span>-</span>
+                {/* End Date */}
+                <Input
+                  type="month"
+                  name="endDate"
+                  value={formData.isPresent ? '' : formData.endDate || ''}
+                  onChange={handleEndDateChange}
+                  disabled={formData.isPresent}
+                  className="w-[175px] bg-white/70 dark:bg-black/40 border border-border rounded-lg"
+                  style={{ paddingRight: '3.5rem' }}
+                />
+                <label className="flex items-center gap-1 text-sm whitespace-nowrap ml-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPresent}
+                    onChange={handlePresentToggle}
+                    className="accent-primary"
+                    style={{ verticalAlign: 'middle' }}
+                  />
+                  Present
+                </label>
+              </div>
             </div>
           </div>
           <Separator className="my-4" />
