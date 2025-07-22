@@ -1,7 +1,6 @@
 import React from 'react';
 import { Timeline, TimelineItem } from './ui/timeline';
 
-// Updated interface to match the ideal data structure
 interface Responsibility {
   point: string;
   subPoints?: string[];
@@ -12,31 +11,37 @@ interface Experience {
   role: string;
   company: string;
   location: string;
-  date: string;
   summary: string;
-  responsibilities: Responsibility[]; // It's an array of objects
+  responsibilities: Responsibility[];
+  startDate: string; // ISO string
+  endDate: string | null; // ISO string or null for "Present"
 }
 
-// Helper component to render the list
-const ResponsibilitiesList = ({ items }: { items: Responsibility[] }) => {
-  return (
-    <ul className="list-disc list-outside space-y-2 pl-4 text-muted-foreground">
-      {items.map((resp, i) => (
-        <li key={i}>
-          {resp.point}
-          {/* If there are sub-points, render a nested ordered list */}
-          {resp.subPoints && resp.subPoints.length > 0 && (
-            <ol className="list-decimal list-inside mt-2 space-y-1 pl-4">
-              {resp.subPoints.map((subPoint, j) => (
-                <li key={j}>{subPoint}</li>
-              ))}
-            </ol>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-};
+// Helper to format date range
+function formatDateRange(startDate: string, endDate: string | null) {
+  const start = new Date(startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const end = endDate
+    ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    : 'Present';
+  return `${start} - ${end}`;
+}
+
+const ResponsibilitiesList = ({ items }: { items: Responsibility[] }) => (
+  <ul className="list-disc list-outside space-y-2 pl-4 text-muted-foreground">
+    {items.map((resp, i) => (
+      <li key={i}>
+        {resp.point}
+        {resp.subPoints && resp.subPoints.length > 0 && (
+          <ol className="list-decimal list-inside mt-2 space-y-1 pl-4">
+            {resp.subPoints.map((subPoint, j) => (
+              <li key={j}>{subPoint}</li>
+            ))}
+          </ol>
+        )}
+      </li>
+    ))}
+  </ul>
+);
 
 async function getExperiences(): Promise<Experience[]> {
   try {
@@ -56,7 +61,7 @@ const Experience = async () => {
 
   const timelineItems: TimelineItem[] = experiences.map(exp => ({
     id: exp.id,
-    title: exp.date,
+    title: formatDateRange(exp.startDate, exp.endDate),
     content: (
       <div className="bg-muted p-6 rounded-lg border border-primary/10 shadow-sm">
         <h4 className="text-xl font-semibold text-foreground">{exp.role}</h4>
@@ -64,7 +69,6 @@ const Experience = async () => {
         <p className="italic my-4 text-muted-foreground">{exp.summary}</p>
         <div className="border-t border-muted-foreground/20 my-4"></div>
         <h5 className="font-semibold text-foreground mb-2">Key Responsibilities:</h5>
-        {/* The component now receives an array of objects directly */}
         <ResponsibilitiesList items={exp.responsibilities} />
       </div>
     ),
