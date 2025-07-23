@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 import CVTemplate from '@/app/components/CVTemplate';
-import CVGenerator from '@/app/components/CVGenerator';
 
 async function getAllCVData() {
   try {
@@ -65,9 +64,6 @@ const DashboardPage = () => {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-primary mb-4">CV Preview</h2>
-        <div className="mb-4">
-          <CVGenerator />
-        </div>
         {loading ? (
           <div className="text-muted-foreground">Loading CV preview...</div>
         ) : cvData ? (

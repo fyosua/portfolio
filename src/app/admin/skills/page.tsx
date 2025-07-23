@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { HiOutlinePencil, HiPlus, HiOutlineTrash } from 'react-icons/hi';
 import { Button } from '@/components/ui/button';
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from '@/components/ui/data-table';
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
   AlertDialogFooter, AlertDialogTitle, AlertDialogDescription,
@@ -21,11 +23,12 @@ interface Skill {
   id: number;
   name: string;
   icon: string;
-  category: string | SkillCategory; // can be IRI or object
+  category: string | SkillCategory;
 }
+
 interface SkillCategory {
   id: number;
-  title: string; // <-- use title, not name
+  title: string;
   icon: string;
 }
 
@@ -41,27 +44,21 @@ export default function SkillsAdminPage() {
   const [categories, setCategories] = useState<SkillCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // For editing category
+  // State for editing and adding
   const [editCategory, setEditCategory] = useState<SkillCategory | null>(null);
   const [editCategoryTitle, setEditCategoryTitle] = useState('');
   const [editCategoryIcon, setEditCategoryIcon] = useState('');
   const [showEditCategory, setShowEditCategory] = useState(false);
 
-  // For editing skill
   const [editSkill, setEditSkill] = useState<Skill | null>(null);
   const [editSkillName, setEditSkillName] = useState('');
   const [editSkillIcon, setEditSkillIcon] = useState('');
   const [showEditSkill, setShowEditSkill] = useState(false);
 
-  // For adding skill
   const [showAddSkill, setShowAddSkill] = useState(false);
-  const [newSkillName, setNewSkillName] = useState('');
-  const [newSkillIcon, setNewSkillIcon] = useState('');
-  const [newSkillCategoryId, setNewSkillCategoryId] = useState<string>('');
-
-  // For adding skill category
   const [showAddSkillCategory, setShowAddSkillCategory] = useState(false);
 
+  // Fetch data
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     Promise.all([
@@ -79,16 +76,14 @@ export default function SkillsAdminPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Group skills by category id
+  // Group skills by category
   const grouped: GroupedSkills = {};
   categories.forEach(cat => {
     grouped[cat.id] = { category: cat, skills: [] };
   });
   skills.forEach(skill => {
-    // skill.category can be IRI or object
     let catId: string = '';
     if (typeof skill.category === 'string') {
-      // e.g. "/api/skill_categories/1"
       catId = skill.category.split('/').pop() || '';
     } else if (typeof skill.category === 'object' && skill.category.id) {
       catId = String(skill.category.id);
@@ -98,13 +93,63 @@ export default function SkillsAdminPage() {
     }
   });
 
-  // Edit Category handlers
+  // Define columns for skills table
+  const skillColumns: ColumnDef<Skill>[] = [
+    {
+      accessorKey: "icon",
+      header: "Icon",
+      cell: ({ row }) => {
+        const iconClass = row.getValue("icon") as string;
+        return (
+          <div className="flex items-center justify-center">
+            {iconClass ? (
+              <DynamicIcon name={iconClass} className="text-2xl text-blue-500" />
+            ) : (
+              <span className="text-gray-400">No icon</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "name",
+      header: "Skill Name",
+      cell: ({ row }) => (
+        <div className="font-medium text-white">
+          {row.getValue("name")}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const skill = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEditSkill(skill)}
+              className="h-8 w-8"
+            >
+              <HiOutlinePencil className="h-4 w-4 text-blue-500" />
+            </Button>
+            <DeleteSkillButton id={skill.id} onDelete={handleDeleteSkill} />
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Handler functions
   const handleEditCategory = (cat: SkillCategory) => {
     setEditCategory(cat);
     setEditCategoryTitle(cat.title);
     setEditCategoryIcon(cat.icon);
     setShowEditCategory(true);
   };
+
   const handleEditCategorySave = async () => {
     if (!editCategory) return;
     const token = localStorage.getItem('authToken');
@@ -117,20 +162,18 @@ export default function SkillsAdminPage() {
       },
       body: JSON.stringify(updated),
     });
-    setCategories(cats =>
-      cats.map(c => (c.id === editCategory.id ? updated : c))
-    );
+    setCategories(cats => cats.map(c => (c.id === editCategory.id ? updated : c)));
     setShowEditCategory(false);
     setEditCategory(null);
   };
 
-  // Edit Skill handlers
   const handleEditSkill = (skill: Skill) => {
     setEditSkill(skill);
     setEditSkillName(skill.name);
     setEditSkillIcon(skill.icon);
     setShowEditSkill(true);
   };
+
   const handleEditSkillSave = async () => {
     if (!editSkill) return;
     const token = localStorage.getItem('authToken');
@@ -143,9 +186,7 @@ export default function SkillsAdminPage() {
       },
       body: JSON.stringify(updated),
     });
-    setSkills(skills =>
-      skills.map(s => (s.id === editSkill.id ? updated : s))
-    );
+    setSkills(skills => skills.map(s => (s.id === editSkill.id ? updated : s)));
     setShowEditSkill(false);
     setEditSkill(null);
   };
@@ -168,15 +209,6 @@ export default function SkillsAdminPage() {
     setCategories(cats => cats.filter(cat => cat.id !== id));
   };
 
-  // Open dialog handler
-  const handleOpenAddSkill = () => {
-    setNewSkillName('');
-    setNewSkillIcon('');
-    setNewSkillCategoryId(categories[0]?.id?.toString() || '');
-    setShowAddSkill(true);
-  };
-
-  // Handler for adding skill category
   const handleAddSkillCategorySave = async ({ title, icon }: { title: string; icon: string }) => {
     const token = localStorage.getItem('authToken');
     const newCategory = { title, icon };
@@ -192,12 +224,9 @@ export default function SkillsAdminPage() {
       const created = await res.json();
       setCategories(cats => [...cats, created]);
       setShowAddSkillCategory(false);
-    } else {
-      alert('Failed to add category');
     }
   };
 
-  // Save handler
   const handleAddSkillSave = async ({ name, icon, categoryId }: { name: string; icon: string; categoryId: string }) => {
     const token = localStorage.getItem('authToken');
     const newSkill = {
@@ -217,69 +246,102 @@ export default function SkillsAdminPage() {
       const created = await res.json();
       setSkills(skills => [...skills, created]);
       setShowAddSkill(false);
-    } else {
-      alert('Failed to add skill');
     }
   };
 
+  if (isLoading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Manage Skills</h1>
-        <div>
-          <Button onClick={() => setShowAddSkill(true)} className="bg-violet-500 text-white hover:bg-violet-600 mr-2">
-            <HiPlus className="mr-2" />
-            Add Skill
-          </Button>
-          <Button onClick={() => setShowAddSkillCategory(true)} className="bg-violet-500 text-white hover:bg-violet-600">
-            <HiPlus className="mr-2" />
-            Add Category
-          </Button>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div className="mb-4">
+            <h1 className="admin-title mb-2">Skills Management</h1>
+            <p className="text-gray-400">Organize and manage your skills by category</p>
+          </div>
+          <div className="flex gap-4">
+            <Button 
+              onClick={() => setShowAddSkill(true)} 
+              className="btn-primary flex items-center gap-2"
+            >
+              <HiPlus />
+              Add Skill
+            </Button>
+            <Button 
+              onClick={() => setShowAddSkillCategory(true)} 
+              className="btn-primary flex items-center gap-2"
+            >
+              <HiPlus />
+              Add Category
+            </Button>
+          </div>
         </div>
       </div>
-      <div className="bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border rounded-xl shadow-2xl transition-colors overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-muted/60">
-            <tr>
-              <th className="p-4 font-semibold text-foreground">Category</th>
-              <th className="p-4 font-semibold text-foreground">Skills</th>
-              <th className="p-4 font-semibold text-right text-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.values(grouped).map(({ category, skills }) => (
-              <tr key={category.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors align-top">
-                <td className="p-4 font-semibold text-lg text-primary">
-                  <span className="inline-flex items-center gap-2">
-                    <i className={`${category.icon} text-2xl`} />
-                    {category.title}
-                  </span>
-                  <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleEditCategory(category)}>
-                    <HiOutlinePencil className="w-5 h-5 text-blue-500" />
-                  </Button>
-                  <DeleteCategoryButton id={category.id} onDelete={handleDeleteCategory} />
-                </td>
-                <td className="p-4">
-                  <div className="flex flex-wrap gap-3">
-                    {skills.map(skill => (
-                      <span key={skill.id} className="inline-flex items-center gap-2 bg-muted/40 px-2 py-1 rounded-lg">
-                        <i className={`${skill.icon} text-xl`} />
-                        <span>{skill.name}</span>
-                        <Button variant="ghost" size="icon" onClick={() => handleEditSkill(skill)}>
-                          <HiOutlinePencil className="w-4 h-4 text-blue-500" />
-                        </Button>
-                        <DeleteSkillButton id={skill.id} onDelete={handleDeleteSkill} />
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="p-4"></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      {/* Stats Cards */}
+      <div className="admin-grid-3">
+        <div className="admin-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">Total Categories</p>
+              <p className="text-2xl font-bold text-white">{categories.length}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="admin-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">Total Skills</p>
+              <p className="text-2xl font-bold text-white">{skills.length}</p>
+            </div>
+          </div>
+        </div>
+        
       </div>
 
+      {/* Category Tables */}
+      <div className="space-y-6">
+        {Object.values(grouped).map(({ category, skills: categorySkills }) => (
+          <div key={category.id} className="admin-card">
+            <div className="admin-card-header">
+              <div className="flex items-center gap-3">
+                <DynamicIcon name={category.icon} className="text-3xl text-blue-500" />
+                <div>
+                  <h2 className="admin-subtitle mb-0">{category.title}</h2>
+                  <p className="text-gray-400 text-sm">{categorySkills.length} skills</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEditCategory(category)}
+                  className="h-8 w-8"
+                >
+                  <HiOutlinePencil className="h-4 w-4 text-blue-500" />
+                </Button>
+                <DeleteCategoryButton id={category.id} onDelete={handleDeleteCategory} />
+              </div>
+            </div>
+            
+            <DataTable
+              columns={skillColumns}
+              data={categorySkills}
+              searchPlaceholder={`Search ${category.title} skills...`}
+              showColumnToggle={false}
+              showRowSelection={false}
+              pageSizeOptions={[3, 5, 10, 15]}
+              initialPageSize={5}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Dialogs remain the same... */}
       {/* Edit Category Dialog */}
       <Dialog open={showEditCategory} onOpenChange={setShowEditCategory}>
         <DialogContent>
@@ -288,15 +350,15 @@ export default function SkillsAdminPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Category Title</label>
+              <label className="admin-label">Category Title</label>
               <input
-                className="w-full bg-white/70 dark:bg-black/40 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground shadow-sm backdrop-blur-md transition-colors"
+                className="admin-input w-full"
                 value={editCategoryTitle}
                 onChange={e => setEditCategoryTitle(e.target.value)}
               />
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium">Category Icon</label>
+              <label className="admin-label">Category Icon</label>
               <IconPicker value={editCategoryIcon} onSelect={setEditCategoryIcon} />
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Preview:</span>
@@ -322,15 +384,15 @@ export default function SkillsAdminPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium">Skill Name</label>
+              <label className="admin-label">Skill Name</label>
               <input
-                className="w-full bg-white/70 dark:bg-black/40 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground shadow-sm backdrop-blur-md transition-colors"
+                className="admin-input w-full"
                 value={editSkillName}
                 onChange={e => setEditSkillName(e.target.value)}
               />
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium">Skill Icon</label>
+              <label className="admin-label">Skill Icon</label>
               <IconPicker value={editSkillIcon} onSelect={setEditSkillIcon} />
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Preview:</span>
@@ -378,15 +440,15 @@ export default function SkillsAdminPage() {
   );
 }
 
-// DeleteSkillButton remains the same as before
+// Delete components remain the same...
 function DeleteSkillButton({ id, onDelete }: { id: number, onDelete: (id: number) => void }) {
   const [open, setOpen] = useState(false);
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="icon" onClick={() => setOpen(true)}>
-          <HiOutlineTrash className="w-5 h-5 text-red-500" />
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <HiOutlineTrash className="h-4 w-4 text-red-500" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -397,19 +459,9 @@ function DeleteSkillButton({ id, onDelete }: { id: number, onDelete: (id: number
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel asChild>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          </AlertDialogCancel>
-          <AlertDialogAction asChild>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onDelete(id);
-                setOpen(false);
-              }}
-            >
-              Delete
-            </Button>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { onDelete(id); setOpen(false); }}>
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -417,38 +469,27 @@ function DeleteSkillButton({ id, onDelete }: { id: number, onDelete: (id: number
   );
 }
 
-// New DeleteCategoryButton component
 function DeleteCategoryButton({ id, onDelete }: { id: number, onDelete: (id: number) => void }) {
   const [open, setOpen] = useState(false);
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="icon" onClick={() => setOpen(true)}>
-          <HiOutlineTrash className="w-5 h-5 text-red-500" />
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <HiOutlineTrash className="h-4 w-4 text-red-500" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Category?</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this category? All skills in this category may also be affected. This action cannot be undone.
+            Are you sure you want to delete this category? All skills in this category may also be affected.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel asChild>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          </AlertDialogCancel>
-          <AlertDialogAction asChild>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onDelete(id);
-                setOpen(false);
-              }}
-            >
-              Delete
-            </Button>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { onDelete(id); setOpen(false); }}>
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

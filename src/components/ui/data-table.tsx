@@ -75,7 +75,7 @@ export function DataTable<TData, TValue>({
   showColumnToggle = true,
   showPagination = true,
   showRowSelection = true,
-  pageSizeOptions = [3,5,10, 20, 30, 50, 100],
+  pageSizeOptions = [3, 5, 10, 20, 30, 50, 100],
   initialPageSize = 10,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -91,7 +91,7 @@ export function DataTable<TData, TValue>({
   // Default search fields - extract from columns if not provided
   const defaultSearchFields = React.useMemo(() => {
     if (searchableFields) return searchableFields
-    
+
     return columns
       .map(col => {
         const accessor = (col as any).accessorKey
@@ -107,21 +107,21 @@ export function DataTable<TData, TValue>({
 
     return defaultSearchFields.some(field => {
       let fieldValue = ""
-      
+
       try {
         if (field.isDate) {
           // Handle date fields
           const originalRow = row.original as any
           const dateValue = originalRow[field.key]
-          
+
           if (dateValue) {
             // Raw date string search
             fieldValue += String(dateValue).toLowerCase() + " "
-            
+
             // Formatted date search
             const date = new Date(dateValue)
-            const formatted = date.toLocaleDateString('en-US', { 
-              year: 'numeric', 
+            const formatted = date.toLocaleDateString('en-US', {
+              year: 'numeric',
               month: 'long',
               month: 'short'
             }).toLowerCase()
@@ -140,7 +140,7 @@ export function DataTable<TData, TValue>({
         const originalRow = row.original as any
         fieldValue = String(originalRow[field.key] || "").toLowerCase()
       }
-      
+
       return fieldValue.includes(searchValue)
     })
   }, [defaultSearchFields])
@@ -185,7 +185,7 @@ export function DataTable<TData, TValue>({
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-background border border-border shadow-lg">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -193,7 +193,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize"
+                      className="capitalize bg-background hover:bg-muted focus:bg-muted"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
@@ -207,7 +207,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenu>
         )}
       </div>
-      
+
       <div className="bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border rounded-xl shadow-2xl transition-colors overflow-hidden">
         <Table>
           <TableHeader>
@@ -219,9 +219,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
@@ -259,7 +259,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      
+
       {(showPagination || showRowSelection) && (
         <div className="flex items-center justify-between space-x-2 py-4">
           {showRowSelection && (
@@ -268,7 +268,7 @@ export function DataTable<TData, TValue>({
               {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>
           )}
-          
+
           {showPagination && (
             <div className="flex items-center space-x-6 lg:space-x-8">
               {/* Page size selector */}
@@ -283,22 +283,22 @@ export function DataTable<TData, TValue>({
                   <SelectTrigger className="h-8 w-[70px]">
                     <SelectValue placeholder={table.getState().pagination.pageSize} />
                   </SelectTrigger>
-                  <SelectContent side="bottom">
+                  <SelectContent side="bottom" className="bg-background border border-border shadow-lg">
                     {pageSizeOptions.map((pageSize) => (
-                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                      <SelectItem key={pageSize} value={`${pageSize}`} className="bg-background hover:bg-muted">
                         {pageSize}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* Page info */}
               <div className="flex w-[100px] items-center justify-center text-sm font-medium">
                 Page {table.getState().pagination.pageIndex + 1} of{" "}
                 {table.getPageCount()}
               </div>
-              
+
               {/* Navigation buttons */}
               <div className="flex items-center space-x-2">
                 <Button
