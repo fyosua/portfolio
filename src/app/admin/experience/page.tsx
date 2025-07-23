@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ColumnDef } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, SearchableField } from "@/components/ui/data-table";
 
 interface Experience {
   id: number;
@@ -46,19 +46,22 @@ const ExperienceAdminPage = () => {
     return `${startFormatted} - ${endFormatted}`;
   };
 
-  // Wrap the fetch function in useCallback so it's stable
+  // Fetch experiences from API
   const fetchExperiences = useCallback(async () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
       router.push('/admin');
       return;
     }
+
     try {
       setIsLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      
       if (!res.ok) throw new Error('Failed to fetch experiences.');
+      
       const data = await res.json();
       setExperiences(data['hydra:member'] || []);
     } catch (err: any) {
@@ -72,6 +75,7 @@ const ExperienceAdminPage = () => {
     fetchExperiences();
   }, [fetchExperiences]);
 
+  // Real delete function
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('authToken');
     try {
@@ -88,6 +92,15 @@ const ExperienceAdminPage = () => {
       alert(err.message);
     }
   };
+
+  // Define searchable fields for experience data
+  const searchableFields: SearchableField[] = [
+    { key: "role" },
+    { key: "company" },
+    { key: "location" },
+    { key: "startDate", isDate: true },
+    { key: "endDate", isDate: true },
+  ];
 
   // Define columns for the DataTable
   const columns: ColumnDef<Experience>[] = [
@@ -140,7 +153,7 @@ const ExperienceAdminPage = () => {
       cell: ({ row }) => <div>{row.getValue("location")}</div>,
     },
     {
-      accessorKey: "period",
+      accessorKey: "startDate",
       header: ({ column }) => {
         return (
           <Button
@@ -156,6 +169,11 @@ const ExperienceAdminPage = () => {
       cell: ({ row }) => {
         const experience = row.original;
         return <div>{formatDateRange(experience.startDate, experience.endDate)}</div>;
+      },
+      sortingFn: (rowA, rowB) => {
+        const dateA = new Date(rowA.original.startDate);
+        const dateB = new Date(rowB.original.startDate);
+        return dateA.getTime() - dateB.getTime();
       },
     },
     {
@@ -189,7 +207,17 @@ const ExperienceAdminPage = () => {
         </Link>
       </div>
       
-      <DataTable columns={columns} data={experiences} />
+      <DataTable 
+        columns={columns} 
+        data={experiences}
+        searchableFields={searchableFields}
+        searchPlaceholder="Search by role, company, location, or date..."
+        showColumnToggle={true}
+        showPagination={true}
+        showRowSelection={true}
+        pageSizeOptions={[5, 10, 20, 50]}
+        initialPageSize={10}
+      />
     </div>
   );
 };
@@ -200,8 +228,8 @@ function DeleteExperienceButton({ id, onDelete }: { id: number, onDelete: (id: n
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="icon" onClick={() => setOpen(true)}>
-          <HiOutlineTrash className="w-5 h-5 text-red-500" />
+        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+          <HiOutlineTrash className="w-5 h-5" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
