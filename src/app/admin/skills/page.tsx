@@ -97,15 +97,15 @@ export default function SkillsAdminPage() {
   const skillColumns: ColumnDef<Skill>[] = [
     {
       accessorKey: "icon",
-      header: "Icon",
+      header: () => <div className="text-center">Icon</div>,
       cell: ({ row }) => {
         const iconClass = row.getValue("icon") as string;
         return (
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center w-full">
             {iconClass ? (
               <DynamicIcon name={iconClass} className="text-2xl text-blue-500" />
             ) : (
-              <span className="text-gray-400">No icon</span>
+              <span className="text-gray-400 text-sm">No icon</span>
             )}
           </div>
         );
@@ -122,11 +122,11 @@ export default function SkillsAdminPage() {
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => {
         const skill = row.original;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <Button
               variant="ghost"
               size="icon"
