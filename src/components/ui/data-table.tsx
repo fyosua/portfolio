@@ -120,12 +120,15 @@ export function DataTable<TData, TValue>({
 
             // Formatted date search
             const date = new Date(dateValue)
-            const formatted = date.toLocaleDateString('en-US', {
+            const formattedLong = date.toLocaleDateString('en-US', {
               year: 'numeric',
-              month: 'long',
+              month: 'long'
+            }).toLowerCase()
+            const formattedShort = date.toLocaleDateString('en-US', {
+              year: 'numeric',
               month: 'short'
             }).toLowerCase()
-            fieldValue += formatted
+            fieldValue += formattedLong + " " + formattedShort
           }
         } else if (field.formatter) {
           // Custom formatter
