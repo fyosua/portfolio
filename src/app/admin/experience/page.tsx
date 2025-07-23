@@ -1,17 +1,27 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react'; // Import useCallback
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { HiOutlinePencil, HiPlus, HiOutlineTrash } from 'react-icons/hi';
+import { ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
+import { ColumnDef } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 
 interface Experience {
   id: number;
   role: string;
   company: string;
-  date: string;
+  location: string;
+  summary: string;
+  responsibilities: Array<{
+    point: string;
+    subPoints?: string[];
+  }>;
+  startDate: string;
+  endDate: string | null;
 }
 
 const ExperienceAdminPage = () => {
@@ -19,6 +29,22 @@ const ExperienceAdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  // Function to format date range
+  const formatDateRange = (startDate: string, endDate: string | null) => {
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : null;
+    
+    const formatOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'short' 
+    };
+    
+    const startFormatted = start.toLocaleDateString('en-US', formatOptions);
+    const endFormatted = end ? end.toLocaleDateString('en-US', formatOptions) : 'Present';
+    
+    return `${startFormatted} - ${endFormatted}`;
+  };
 
   // Wrap the fetch function in useCallback so it's stable
   const fetchExperiences = useCallback(async () => {
@@ -28,7 +54,7 @@ const ExperienceAdminPage = () => {
       return;
     }
     try {
-      setIsLoading(true); // Set loading true at the start of the fetch
+      setIsLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -40,30 +66,115 @@ const ExperienceAdminPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [router]); // Add router as a dependency
+  }, [router]);
 
   useEffect(() => {
     fetchExperiences();
-  }, [fetchExperiences]); // Now the dependency is the stable fetchExperiences function
+  }, [fetchExperiences]);
 
   const handleDelete = async (id: number) => {
-    if (window.confirm(`Are you sure you want to delete experience with ID: ${id}?`)) {
-      const token = localStorage.getItem('authToken');
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+    const token = localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
 
-        if (!res.ok) throw new Error('Failed to delete experience.');
-        
-        // Refresh the list after deleting
-        fetchExperiences();
-      } catch (err: any) {
-        alert(err.message);
-      }
+      if (!res.ok) throw new Error('Failed to delete experience.');
+      
+      // Refresh the list after deleting
+      fetchExperiences();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
+
+  // Define columns for the DataTable
+  const columns: ColumnDef<Experience>[] = [
+    {
+      accessorKey: "role",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0 h-auto font-semibold text-foreground hover:bg-transparent"
+          >
+            Role
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div className="font-medium">{row.getValue("role")}</div>,
+    },
+    {
+      accessorKey: "company",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0 h-auto font-semibold text-foreground hover:bg-transparent"
+          >
+            Company
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{row.getValue("company")}</div>,
+    },
+    {
+      accessorKey: "location",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0 h-auto font-semibold text-foreground hover:bg-transparent"
+          >
+            Location
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{row.getValue("location")}</div>,
+    },
+    {
+      accessorKey: "period",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0 h-auto font-semibold text-foreground hover:bg-transparent"
+          >
+            Period
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const experience = row.original;
+        return <div>{formatDateRange(experience.startDate, experience.endDate)}</div>;
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right font-semibold text-foreground">Actions</div>,
+      cell: ({ row }) => {
+        const experience = row.original;
+        
+        return (
+          <div className="flex justify-end gap-2">
+            <Link href={`/admin/experience/edit/${experience.id}`} className="text-blue-500 hover:text-blue-700 p-2">
+              <HiOutlinePencil className="w-5 h-5" />
+            </Link>
+            <DeleteExperienceButton id={experience.id} onDelete={handleDelete} />
+          </div>
+        );
+      },
+    },
+  ];
 
   if (isLoading) return <p className="text-center text-muted-foreground">Loading experiences...</p>;
   if (error) return <p className="text-center text-red-500">Error: {error}</p>;
@@ -77,36 +188,8 @@ const ExperienceAdminPage = () => {
           Create New
         </Link>
       </div>
-      <div className="bg-white/70 dark:bg-black/40 backdrop-blur-md border border-border rounded-xl shadow-2xl transition-colors overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-muted/60">
-            <tr>
-              <th className="p-4 font-semibold text-foreground">Role</th>
-              <th className="p-4 font-semibold text-foreground">Company</th>
-              <th className="p-4 font-semibold text-foreground">Date</th>
-              <th className="p-4 font-semibold text-right text-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {experiences.map(exp => (
-              <tr
-                key={exp.id}
-                className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
-              >
-                <td className="p-4">{exp.role}</td>
-                <td className="p-4">{exp.company}</td>
-                <td className="p-4">{exp.date}</td>
-                <td className="p-4 flex justify-end gap-2">
-                  <Link href={`/admin/experience/edit/${exp.id}`} className="text-blue-500 hover:text-blue-700 p-2">
-                    <HiOutlinePencil className="w-5 h-5" />
-                  </Link>
-                  <DeleteExperienceButton id={exp.id} onDelete={handleDelete} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      
+      <DataTable columns={columns} data={experiences} />
     </div>
   );
 };
