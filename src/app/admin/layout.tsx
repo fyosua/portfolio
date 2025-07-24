@@ -11,7 +11,8 @@ import {
   HiOutlineX,
   HiOutlineUser,
   HiOutlineGlobeAlt,
-  HiOutlineIdentification
+  HiOutlineIdentification,
+  HiUserGroup
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -189,6 +190,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   // Wait for auth check before rendering protected pages
   if (!isClient || !checkedAuth) return null;
 
+  // Main navigation items (without Users)
   const navItems = [
     { href: '/admin/dashboard', icon: <HiOutlineHome />, label: 'Dashboard' },
     { href: '/admin/about', icon: <HiOutlineUser />, label: 'About' },
@@ -198,10 +200,17 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { href: '/admin/personal-profiles', icon: <HiOutlineIdentification />, label: 'Personal Profiles' },
   ];
 
+  // Bottom navigation items (Users and Logout)
+  const bottomItems = [
+    { href: '/admin/users', icon: <HiUserGroup />, label: 'Users', type: 'nav' },
+    { href: '#', icon: <HiOutlineLogout />, label: 'Log out', type: 'action', action: () => handleLogout('Manual logout') },
+  ];
+
   return (
     <div className="min-h-screen flex bg-gray-900">
       {/* Desktop Sidebar */}
-      <aside className="w-64 bg-gray-800 hidden md:flex flex-col rounded-r-3xl">
+      <aside className="w-64 bg-gray-800 hidden md:flex flex-col rounded-r-3xl relative">
+        {/* Header */}
         <div className="p-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -211,7 +220,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
         
-        <nav className="flex-1 px-4 space-y-2">
+        {/* Main Navigation - Full height scrollable */}
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
           {navItems.map(item => (
             <button
               key={item.href}
@@ -228,14 +238,24 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           ))}
         </nav>
         
-        <div className="p-4">
-          <button 
-            onClick={() => handleLogout('Manual logout')} 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl w-full text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
-          >
-            <HiOutlineLogout className="text-xl" />
-            <span className="font-medium">Log out</span>
-          </button>
+        {/* Floating Bottom Section - Blends with sidebar */}
+        <div className="fixed bottom-0 left-0 w-64 bg-gray-800 px-4 pb-4 pt-3 border-t border-gray-700/50 rounded-br-3xl">
+          <div className="space-y-2">
+            {bottomItems.map(item => (
+              <button
+                key={item.href}
+                onClick={item.type === 'action' ? item.action : () => handleNavClick(item.href)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl w-full text-left transition-all ${
+                  item.type === 'nav' && pathname === item.href
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </aside>
 
@@ -256,6 +276,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               </button>
             </div>
             
+            {/* Main Navigation - Scrollable area */}
             <nav className="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
               {navItems.map(item => (
                 <button
@@ -273,14 +294,22 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               ))}
             </nav>
             
-            <div className="p-4 border-t border-gray-700">
-              <button 
-                onClick={() => handleLogout('Manual logout')} 
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
-              >
-                <HiOutlineLogout className="text-2xl" />
-                <span className="font-medium text-lg">Log out</span>
-              </button>
+            {/* Bottom Section - Fixed at Bottom of Mobile Menu */}
+            <div className="p-4 border-t border-gray-700 space-y-3 bg-gray-800">
+              {bottomItems.map(item => (
+                <button
+                  key={item.href}
+                  onClick={item.type === 'action' ? item.action : () => handleNavClick(item.href)}
+                  className={`flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all ${
+                    item.type === 'nav' && pathname === item.href
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  <span className="text-2xl">{item.icon}</span>
+                  <span className="font-medium text-lg">{item.label}</span>
+                </button>
+              ))}
             </div>
           </aside>
         </div>
