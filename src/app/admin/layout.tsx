@@ -16,8 +16,111 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   // State for profile info
   const [profile, setProfile] = useState<{ name?: string; title?: string } | null>(null);
 
+  // JWT Token validation function
+  const validateToken = async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/validate`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  };
+
+  // Check if JWT token is expired
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error parsing JWT token:', error);
+      return true; // Treat invalid tokens as expired
+    }
+  };
+
+  // Handle logout with cleanup
+  const handleLogout = (reason?: string) => {
+    console.log(reason ? `Logout reason: ${reason}` : 'Manual logout');
+    localStorage.removeItem('authToken');
+    setProfile(null);
+    setIsMobileMenuOpen(false);
+    setShowMobileProfile(false);
+    router.push('/admin');
+  };
+
+  // Token validation effect
+  useEffect(() => {
+    const checkTokenValidity = async () => {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        if (pathname !== '/admin') {
+          handleLogout('No token found');
+        }
+        return;
+      }
+
+      // Check if token is expired
+      if (isTokenExpired(token)) {
+        handleLogout('Token expired');
+        return;
+      }
+
+      // Validate token with server
+      const isValid = await validateToken(token);
+      if (!isValid) {
+        handleLogout('Invalid token');
+        return;
+      }
+    };
+
+    // Check token validity every 5 minutes
+    const tokenCheckInterval = setInterval(checkTokenValidity, 5 * 60 * 1000);
+
+    // Initial token check
+    checkTokenValidity();
+
+    // Cleanup interval on unmount
+    return () => clearInterval(tokenCheckInterval);
+  }, [pathname]);
+
+  // API request interceptor effect
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      
+      // Check for 401 Unauthorized responses
+      if (response.status === 401) {
+        const url = args[0] as string;
+        // Only logout if it's an API call (not the login endpoint)
+        if (url.includes('/api/') && !url.includes('/api/login')) {
+          handleLogout('Unauthorized API response');
+        }
+      }
+      
+      return response;
+    };
+
+    // Restore original fetch on cleanup
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
+  // Initial setup effect
   useEffect(() => {
     setIsClient(true);
+    
     // Auth check
     const token = localStorage.getItem('authToken');
     if (!token && pathname !== '/admin') {
@@ -25,22 +128,44 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     } else {
       setCheckedAuth(true);
     }
-    // Fetch profile data
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles`)
-      .then(res => res.json())
-      .then(data => {
-        const user = data['hydra:member']?.[0];
-        setProfile({ name: user?.name, title: user?.title });
+
+    // Fetch profile data only if we have a valid token
+    if (token && !isTokenExpired(token)) {
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profiles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       })
-      .catch(() => setProfile(null));
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to fetch profile');
+          }
+          return res.json();
+        })
+        .then(data => {
+          const user = data['hydra:member']?.[0];
+          setProfile({ name: user?.name, title: user?.title });
+        })
+        .catch((error) => {
+          console.error('Profile fetch error:', error);
+          setProfile(null);
+        });
+    }
   }, [router, pathname]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    setIsMobileMenuOpen(false);
-    router.push('/admin');
-  };
+  // Listen for storage changes (logout from another tab)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken' && !e.newValue) {
+        handleLogout('Token removed from another tab');
+      }
+    };
 
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Navigation handler
   const handleNavClick = (href: string) => {
     setIsMobileMenuOpen(false);
     router.push(href);
@@ -92,7 +217,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         
         <div className="p-4">
           <button 
-            onClick={handleLogout} 
+            onClick={() => handleLogout('Manual logout')} 
             className="flex items-center gap-3 px-4 py-3 rounded-2xl w-full text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
           >
             <HiOutlineLogout className="text-xl" />
@@ -137,7 +262,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             
             <div className="p-4 border-t border-gray-700">
               <button 
-                onClick={handleLogout} 
+                onClick={() => handleLogout('Manual logout')} 
                 className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
               >
                 <HiOutlineLogout className="text-2xl" />
@@ -170,7 +295,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             <button 
               onClick={() => setShowMobileProfile(!showMobileProfile)}
-              className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center focus:ring-2 focus:ring-blue-400"
+              onMouseEnter={() => setShowMobileProfile(true)}
+              onMouseLeave={() => setShowMobileProfile(false)}
+              className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center focus:ring-2 focus:ring-blue-400 transition-all"
             >
               <span className="text-white font-semibold text-sm">
                 {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
@@ -179,7 +306,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             
             {/* Mobile Profile Dropdown */}
             {showMobileProfile && (
-              <div className="absolute top-12 right-0 bg-gray-800 rounded-lg shadow-lg p-4 min-w-48 md:hidden z-10 border border-gray-700">
+              <div 
+                onMouseEnter={() => setShowMobileProfile(true)}
+                onMouseLeave={() => setShowMobileProfile(false)}
+                className="absolute top-12 right-0 bg-gray-800 rounded-lg shadow-lg p-4 min-w-48 md:hidden z-10 border border-gray-700"
+              >
                 <div className="text-white font-medium">{profile?.name || '...'}</div>
                 <div className="text-gray-400 text-sm">{profile?.title || ''}</div>
               </div>
