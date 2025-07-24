@@ -71,7 +71,7 @@ const userService = {
 
   async changePassword(id: number, password: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: getAuthHeadersWithContent(),
       body: JSON.stringify({ password }),
     });
