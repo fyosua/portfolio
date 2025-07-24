@@ -2,7 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { HiOutlineHome, HiOutlineBriefcase, HiOutlineSparkles, HiOutlineLogout, HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
+import { 
+  HiOutlineHome, 
+  HiOutlineBriefcase, 
+  HiOutlineSparkles, 
+  HiOutlineLogout, 
+  HiOutlineMenu, 
+  HiOutlineX,
+  HiOutlineUser,
+  HiOutlineGlobeAlt,
+  HiOutlineIdentification
+} from 'react-icons/hi';
 import Link from 'next/link';
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -181,8 +191,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems = [
     { href: '/admin/dashboard', icon: <HiOutlineHome />, label: 'Dashboard' },
+    { href: '/admin/about', icon: <HiOutlineUser />, label: 'About' },
     { href: '/admin/experience', icon: <HiOutlineBriefcase />, label: 'Experience' },
     { href: '/admin/skills', icon: <HiOutlineSparkles />, label: 'Skills' },
+    { href: '/admin/languages', icon: <HiOutlineGlobeAlt />, label: 'Languages' },
+    { href: '/admin/personal-profiles', icon: <HiOutlineIdentification />, label: 'Personal Profiles' },
   ];
 
   return (

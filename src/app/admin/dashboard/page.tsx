@@ -58,7 +58,7 @@ const DashboardPage = () => {
       <div className="mt-8 p-6 bg-background rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold text-foreground">Next Steps</h2>
         <p className="mt-2 text-muted-foreground">
-          Use the sidebar to navigate to the "Experience" or "Skills" sections to begin managing your data.
+          Use the sidebar to navigate to begin managing your data.
         </p>
       </div>
 

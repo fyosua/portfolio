@@ -64,6 +64,8 @@ interface DataTableProps<TData, TValue> {
   pageSizeOptions?: number[]
   /** Initial page size */
   initialPageSize?: number
+  /** Mass row selection change handler */
+  onRowSelectionChange?: (selectedRows: TData[]) => void; // Changed T[] to TData[]
 }
 
 export function DataTable<TData, TValue>({
@@ -77,6 +79,7 @@ export function DataTable<TData, TValue>({
   showRowSelection = true,
   pageSizeOptions = [3, 5, 10, 20, 30, 50, 100],
   initialPageSize = 10,
+  onRowSelectionChange, // Add this parameter
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -87,6 +90,43 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: initialPageSize,
   })
+
+  // Add row selection columns if showRowSelection is true
+  const columnsWithSelection = React.useMemo(() => {
+    if (!showRowSelection) return columns;
+
+    const selectionColumn: ColumnDef<TData, TValue> = {
+      id: "select",
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={(e) => row.toggleSelected(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    return [selectionColumn, ...columns];
+  }, [columns, showRowSelection]);
+
+  // Handle row selection change and call the callback
+  React.useEffect(() => {
+    if (onRowSelectionChange) {
+      const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
+      onRowSelectionChange(selectedRows);
+    }
+  }, [rowSelection, onRowSelectionChange]);
 
   // Default search fields - extract from columns if not provided
   const defaultSearchFields = React.useMemo(() => {
@@ -150,7 +190,7 @@ export function DataTable<TData, TValue>({
 
   const table = useReactTable({
     data,
-    columns,
+    columns: columnsWithSelection, // Use columns with selection
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -162,6 +202,7 @@ export function DataTable<TData, TValue>({
     onPaginationChange: setPagination,
     globalFilterFn: customGlobalFilter || defaultGlobalFilter,
     onGlobalFilterChange: setGlobalFilter,
+    enableRowSelection: true, // Add this line
     state: {
       sorting,
       columnFilters,
@@ -252,7 +293,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columnsWithSelection.length} // Update this line
                   className="h-24 text-center"
                 >
                   No results.

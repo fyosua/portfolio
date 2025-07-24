@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { HiOutlinePencil, HiPlus, HiOutlineTrash } from 'react-icons/hi';
+import React, { useEffect, useState, useCallback } from 'react';
+import { HiOutlinePencil, HiPlus, HiOutlineTrash, HiOutlineCheck, HiOutlineCog } from 'react-icons/hi';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, SearchableField } from '@/components/ui/data-table';
+import { ArrowUpDown } from 'lucide-react';
 import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
   AlertDialogFooter, AlertDialogTitle, AlertDialogDescription,
@@ -93,11 +94,11 @@ export default function SkillsAdminPage() {
     }
   });
 
-  // Define columns for skills table
-  const skillColumns: ColumnDef<Skill>[] = [
+  // Create skill columns with sorting
+  const createSkillColumns = useCallback((onEdit: (skill: Skill) => void, onDelete: (id: number) => void): ColumnDef<Skill>[] => [
     {
       accessorKey: "icon",
-      header: () => <div className="text-center">Icon</div>,
+      header: () => <div className="text-center font-semibold text-foreground">Icon</div>,
       cell: ({ row }) => {
         const iconClass = row.getValue("icon") as string;
         return (
@@ -110,10 +111,20 @@ export default function SkillsAdminPage() {
           </div>
         );
       },
+      enableSorting: false,
     },
     {
       accessorKey: "name",
-      header: "Skill Name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="p-0 h-auto font-semibold text-foreground hover:bg-transparent"
+        >
+          Skill Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
         <div className="font-medium text-white">
           {row.getValue("name")}
@@ -122,25 +133,26 @@ export default function SkillsAdminPage() {
     },
     {
       id: "actions",
-      header: () => <div className="text-center">Actions</div>,
+      header: () => <div className="text-right font-semibold text-foreground">Actions</div>,
       cell: ({ row }) => {
         const skill = row.original;
         return (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleEditSkill(skill)}
-              className="h-8 w-8"
+              onClick={() => onEdit(skill)}
+              className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
             >
-              <HiOutlinePencil className="h-4 w-4 text-blue-500" />
+              <HiOutlinePencil className="h-4 w-4" />
             </Button>
-            <DeleteSkillButton id={skill.id} onDelete={handleDeleteSkill} />
+            <DeleteSkillButton id={skill.id} onDelete={onDelete} />
           </div>
         );
       },
+      enableHiding: false,
     },
-  ];
+  ], []);
 
   // Handler functions
   const handleEditCategory = (cat: SkillCategory) => {
@@ -249,8 +261,19 @@ export default function SkillsAdminPage() {
     }
   };
 
+  const searchableFields: SearchableField[] = [
+    { key: "name" },
+  ];
+
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white">Loading skills...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -258,7 +281,7 @@ export default function SkillsAdminPage() {
       {/* Header Section */}
       <div className="admin-card">
         <div className="admin-card-header">
-          <div className="mb-4">
+          <div>
             <h1 className="admin-title mb-2">Skills Management</h1>
             <p className="text-gray-400">Organize and manage your skills by category</p>
           </div>
@@ -279,69 +302,97 @@ export default function SkillsAdminPage() {
             </Button>
           </div>
         </div>
+        <div className="border-t border-gray-700 mt-4"></div>
       </div>
 
       {/* Stats Cards */}
-      <div className="admin-grid-3">
-        <div className="admin-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Categories</p>
-              <p className="text-2xl font-bold text-white">{categories.length}</p>
+      <div className="admin-card">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="admin-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Categories</p>
+                <p className="text-2xl font-bold text-white">{categories.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <HiOutlineCog className="text-white text-xl" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="admin-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Skills</p>
+                <p className="text-2xl font-bold text-white">{skills.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                <HiOutlineCheck className="text-white text-xl" />
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Avg Skills/Category</p>
+                <p className="text-2xl font-bold text-white">
+                  {categories.length > 0 ? Math.round(skills.length / categories.length) : 0}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                <HiOutlineCog className="text-white text-xl" />
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="admin-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Skills</p>
-              <p className="text-2xl font-bold text-white">{skills.length}</p>
-            </div>
-          </div>
-        </div>
-        
       </div>
 
       {/* Category Tables */}
       <div className="space-y-6">
-        {Object.values(grouped).map(({ category, skills: categorySkills }) => (
-          <div key={category.id} className="admin-card">
-            <div className="admin-card-header">
-              <div className="flex items-center gap-3">
-                <DynamicIcon name={category.icon} className="text-3xl text-blue-500" />
-                <div>
-                  <h2 className="admin-subtitle mb-0">{category.title}</h2>
-                  <p className="text-gray-400 text-sm">{categorySkills.length} skills</p>
+        {Object.values(grouped).map(({ category, skills: categorySkills }) => {
+          const skillColumns = createSkillColumns(handleEditSkill, handleDeleteSkill);
+
+          return (
+            <div key={category.id} className="admin-card">
+              <div className="admin-card-header">
+                <div className="flex items-center gap-3">
+                  <DynamicIcon name={category.icon} className="text-3xl text-blue-500" />
+                  <div>
+                    <h2 className="admin-subtitle mb-0">{category.title}</h2>
+                    <p className="text-gray-400 text-sm">{categorySkills.length} skills</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditCategory(category)}
+                    className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <HiOutlinePencil className="h-4 w-4" />
+                  </Button>
+                  <DeleteCategoryButton id={category.id} onDelete={handleDeleteCategory} />
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEditCategory(category)}
-                  className="h-8 w-8"
-                >
-                  <HiOutlinePencil className="h-4 w-4 text-blue-500" />
-                </Button>
-                <DeleteCategoryButton id={category.id} onDelete={handleDeleteCategory} />
-              </div>
+              
+              <DataTable
+                key={`table-${category.id}`}
+                columns={skillColumns}
+                data={categorySkills}
+                searchableFields={searchableFields}
+                searchPlaceholder={`Search ${category.title} skills...`}
+                showColumnToggle={true}
+                showPagination={true}
+                showRowSelection={false}
+                pageSizeOptions={[3, 5, 10, 15]}
+                initialPageSize={5}
+              />
             </div>
-            
-            <DataTable
-              columns={skillColumns}
-              data={categorySkills}
-              searchPlaceholder={`Search ${category.title} skills...`}
-              showColumnToggle={false}
-              showRowSelection={false}
-              pageSizeOptions={[3, 5, 10, 15]}
-              initialPageSize={5}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Dialogs remain the same... */}
       {/* Edit Category Dialog */}
       <Dialog open={showEditCategory} onOpenChange={setShowEditCategory}>
         <DialogContent>
@@ -440,7 +491,7 @@ export default function SkillsAdminPage() {
   );
 }
 
-// Delete components remain the same...
+// Individual Delete Buttons (keeping these as they work fine)
 function DeleteSkillButton({ id, onDelete }: { id: number, onDelete: (id: number) => void }) {
   const [open, setOpen] = useState(false);
 
