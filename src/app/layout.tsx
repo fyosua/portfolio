@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './styles/globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
+import { GTMScript, GTMNoscript } from '../components/analytics/GTM'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://yosuaf.com'),
@@ -41,6 +42,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google Tag Manager */}
+        <GTMScript />
+        
         {/* Prevent theme flicker */}
         <script
           dangerouslySetInnerHTML={{
@@ -60,6 +64,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className}`}>
+        {/* Google Tag Manager (noscript) */}
+        <GTMNoscript />
+        
         <ThemeProvider attribute="class" defaultTheme="dark">
           {children}
         </ThemeProvider>
