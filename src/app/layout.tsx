@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     siteName: 'Yosua Ferdian Portfolio',
     images: [
       {
-        url: '/images/og-image.png', // Next.js will now correctly combine this with metadataBase
+        url: '/images/website_logo.jpeg',
         width: 1200,
         height: 630,
         alt: 'Yosua Ferdian Portfolio',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Yosua Ferdian | Technical Specialist',
     description: 'Expert in Google Tracking solutions and web development.',
-    images: ['/images/og-image.png'], // This will also be resolved correctly
+    images: ['/images/website_logo.jpeg'],
   },
 }
 
