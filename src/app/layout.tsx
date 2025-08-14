@@ -45,18 +45,22 @@ export default function RootLayout({
         {/* Google Tag Manager */}
         <GTMScript />
         
-        {/* Prevent theme flicker */}
+        {/* Updated anti‑flicker script to honor system as default */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
+                  var stored = localStorage.getItem('theme');     // 'light' | 'dark' | 'system' | null
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  // Default = system
+                  if (!stored || stored === 'system') {
+                    if (prefersDark) document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                    return;
                   }
+                  if (stored === 'dark') document.documentElement.classList.add('dark');
+                  else document.documentElement.classList.remove('dark');
                 } catch(e) {}
               })();
             `,
@@ -67,7 +71,8 @@ export default function RootLayout({
         {/* Google Tag Manager (noscript) */}
         <GTMNoscript />
         
-        <ThemeProvider attribute="class" defaultTheme="dark">
+        {/* Default theme changed to system */}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>
       </body>
