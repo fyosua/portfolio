@@ -49,7 +49,14 @@ async function getExperiences(): Promise<Experience[]> {
     const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error('Failed to fetch experiences');
     const data = await res.json();
-    return data['hydra:member'] || [];
+    const experiences = data['hydra:member'] || [];
+    
+    // Sort experiences by startDate in descending order (most recent first)
+    return experiences.sort((a: Experience, b: Experience) => {
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
+      return dateB.getTime() - dateA.getTime();
+    });
   } catch (error) {
     console.error('--- Error in getExperiences function ---', error);
     return [];

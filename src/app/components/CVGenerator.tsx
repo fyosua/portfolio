@@ -29,10 +29,17 @@ async function getAllData() {
       skills: category.skills.map((skillId: string) => skillsMap.get(skillId)).filter(Boolean)
     }));
 
+    // Sort experiences by startDate in descending order (most recent first)
+    const sortedExperiences = (expData['hydra:member'] || []).sort((a: any, b: any) => {
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
+      return dateB.getTime() - dateA.getTime();
+    });
+
     return {
       profile: profileData['hydra:member']?.[0],
       aboutContent: aboutData['hydra:member']?.[0]?.content,
-      experiences: expData['hydra:member'],
+      experiences: sortedExperiences,
       education: eduData['hydra:member']?.[0],
       skillsByCategory,
       languages: langData['hydra:member'],
