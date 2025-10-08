@@ -12,7 +12,8 @@ import {
   HiOutlineUser,
   HiOutlineGlobeAlt,
   HiOutlineIdentification,
-  HiUserGroup
+  HiUserGroup,
+  HiOutlineAcademicCap
 } from 'react-icons/hi';
 import Link from 'next/link';
 
@@ -195,6 +196,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { href: '/admin/dashboard', icon: <HiOutlineHome />, label: 'Dashboard' },
     { href: '/admin/about', icon: <HiOutlineUser />, label: 'About' },
     { href: '/admin/experience', icon: <HiOutlineBriefcase />, label: 'Experience' },
+    { href: '/admin/education', icon: <HiOutlineAcademicCap />, label: 'Education' },
     { href: '/admin/skills', icon: <HiOutlineSparkles />, label: 'Skills' },
     { href: '/admin/languages', icon: <HiOutlineGlobeAlt />, label: 'Languages' },
     { href: '/admin/personal-profiles', icon: <HiOutlineIdentification />, label: 'Personal Profiles' },

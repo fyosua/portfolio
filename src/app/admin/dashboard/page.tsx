@@ -23,11 +23,28 @@ async function getAllCVData() {
       skills: category.skills.map((skillId: string) => skillsMap.get(skillId)).filter(Boolean)
     }));
 
+    // Sort education by period (most recent first)
+    const sortedEducation = (eduData['hydra:member'] || []).sort((a: any, b: any) => {
+      const extractEndYear = (period: string) => {
+        const parts = period.split(' - ');
+        if (parts.length === 2) {
+          const endPart = parts[1].trim();
+          const year = endPart.match(/\d{4}/);
+          return year ? parseInt(year[0]) : 0;
+        }
+        return 0;
+      };
+      
+      const yearA = extractEndYear(a.period || '');
+      const yearB = extractEndYear(b.period || '');
+      return yearB - yearA; // Most recent first
+    });
+
     return {
       profile: profileData['hydra:member']?.[0],
       aboutContent: aboutData['hydra:member']?.[0]?.content,
       experiences: expData['hydra:member'],
-      education: eduData['hydra:member']?.[0],
+      education: sortedEducation, // Use sorted education
       skillsByCategory,
       languages: langData['hydra:member'],
       personalInfo: personalInfoData['hydra:member']?.[0],

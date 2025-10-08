@@ -18,6 +18,7 @@ import DynamicIcon from '@/app/components/DynamicIcon';
 import IconPicker from '@/app/components/IconPicker';
 import AddSkillForm from './AddSkillForm';
 import AddSkillCategoryForm from './AddSkillCategoryForm';
+import { withCacheClearing } from '@/lib/cache-service';
 
 // Types for Skill and SkillCategory
 interface Skill {
@@ -164,19 +165,27 @@ export default function SkillsAdminPage() {
 
   const handleEditCategorySave = async () => {
     if (!editCategory) return;
-    const token = localStorage.getItem('authToken');
-    const updated = { ...editCategory, title: editCategoryTitle, icon: editCategoryIcon };
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories/${editCategory.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/ld+json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(updated),
-    });
-    setCategories(cats => cats.map(c => (c.id === editCategory.id ? updated : c)));
-    setShowEditCategory(false);
-    setEditCategory(null);
+    
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        const updated = { ...editCategory, title: editCategoryTitle, icon: editCategoryIcon };
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories/${editCategory.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(updated),
+        });
+        setCategories(cats => cats.map(c => (c.id === editCategory.id ? updated : c)));
+        setShowEditCategory(false);
+        setEditCategory(null);
+        return updated;
+      }, 'Skill category update');
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   };
 
   const handleEditSkill = (skill: Skill) => {
@@ -188,76 +197,114 @@ export default function SkillsAdminPage() {
 
   const handleEditSkillSave = async () => {
     if (!editSkill) return;
-    const token = localStorage.getItem('authToken');
-    const updated = { ...editSkill, name: editSkillName, icon: editSkillIcon };
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills/${editSkill.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/ld+json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(updated),
-    });
-    setSkills(skills => skills.map(s => (s.id === editSkill.id ? updated : s)));
-    setShowEditSkill(false);
-    setEditSkill(null);
+    
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        const updated = { ...editSkill, name: editSkillName, icon: editSkillIcon };
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills/${editSkill.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(updated),
+        });
+        setSkills(skills => skills.map(s => (s.id === editSkill.id ? updated : s)));
+        setShowEditSkill(false);
+        setEditSkill(null);
+        return updated;
+      }, 'Skill update');
+    } catch (error) {
+      console.error('Error updating skill:', error);
+    }
   };
 
   const handleDeleteSkill = async (id: number) => {
-    const token = localStorage.getItem('authToken');
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    setSkills(skills => skills.filter(skill => skill.id !== id));
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        setSkills(skills => skills.filter(skill => skill.id !== id));
+        return true;
+      }, 'Skill deletion');
+    } catch (error) {
+      console.error('Error deleting skill:', error);
+    }
   };
 
   const handleDeleteCategory = async (id: number) => {
-    const token = localStorage.getItem('authToken');
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    setCategories(cats => cats.filter(cat => cat.id !== id));
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        setCategories(cats => cats.filter(cat => cat.id !== id));
+        return true;
+      }, 'Skill category deletion');
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
   };
 
   const handleAddSkillCategorySave = async ({ title, icon }: { title: string; icon: string }) => {
-    const token = localStorage.getItem('authToken');
-    const newCategory = { title, icon };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/ld+json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(newCategory),
-    });
-    if (res.ok) {
-      const created = await res.json();
-      setCategories(cats => [...cats, created]);
-      setShowAddSkillCategory(false);
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        const newCategory = { title, icon };
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skill_categories`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(newCategory),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setCategories(cats => [...cats, created]);
+          setShowAddSkillCategory(false);
+          return created;
+        }
+        throw new Error('Failed to create category');
+      }, 'Skill category creation');
+    } catch (error) {
+      console.error('Error creating category:', error);
     }
   };
 
   const handleAddSkillSave = async ({ name, icon, categoryId }: { name: string; icon: string; categoryId: string }) => {
-    const token = localStorage.getItem('authToken');
-    const newSkill = {
-      name,
-      icon,
-      category: `/api/skill_categories/${categoryId}`,
-    };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/ld+json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(newSkill),
-    });
-    if (res.ok) {
-      const created = await res.json();
-      setSkills(skills => [...skills, created]);
-      setShowAddSkill(false);
+    try {
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        const newSkill = {
+          name,
+          icon,
+          category: `/api/skill_categories/${categoryId}`,
+        };
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/skills`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(newSkill),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setSkills(skills => [...skills, created]);
+          setShowAddSkill(false);
+          return created;
+        }
+        throw new Error('Failed to create skill');
+      }, 'Skill creation');
+    } catch (error) {
+      console.error('Error creating skill:', error);
     }
   };
 

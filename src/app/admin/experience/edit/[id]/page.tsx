@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'; // 1. Import us
 import { useRouter, useParams } from 'next/navigation';
 import ExperienceForm from '../../ExperienceForm';
 import Link from 'next/link';
+import { withCacheClearing } from '@/lib/cache-service';
 
 const EditExperiencePage = () => {
   const [initialData, setInitialData] = useState(null);
@@ -49,20 +50,23 @@ const EditExperiencePage = () => {
     };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/ld+json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      await withCacheClearing(async () => {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
-      if (!res.ok) {
-        throw new Error('Failed to update experience.');
-      }
-      
-      router.push('/admin/experience');
+        if (!res.ok) {
+          throw new Error('Failed to update experience.');
+        }
+        
+        router.push('/admin/experience');
+        return true;
+      }, 'Experience update');
     } catch (err: any) {
       setError(err.message);
     } finally {

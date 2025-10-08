@@ -125,15 +125,19 @@ const CVTemplate = ({ profile, aboutContent, experiences, education, skillsByCat
         {/* Education Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Education</Text>
-          <View style={styles.educationItem} wrap={false}>
-            <View style={styles.educationHeader}>
-              <Text style={styles.educationPeriod}>{education?.period}</Text>
-              <Text style={styles.educationDegree}>{education?.degree}, {education?.university}</Text>
+          {education?.map((edu: any) => (
+            <View key={edu.id} style={styles.educationItem} wrap={false}>
+              <View style={styles.educationHeader}>
+                <Text style={styles.educationPeriod}>{edu.period}</Text>
+                <Text style={styles.educationDegree}>{edu.degree}, {edu.university}</Text>
+              </View>
+              {edu.details && edu.details.length > 0 && (
+                <View style={styles.educationDetailList}>
+                  {edu.details.map((detail: string, i: number) => (<BulletText key={i}>{detail}</BulletText>))}
+                </View>
+              )}
             </View>
-            <View style={styles.educationDetailList}>
-              {education?.details.map((detail: string, i: number) => (<BulletText key={i}>{detail}</BulletText>))}
-            </View>
-          </View>
+          ))}
         </View>
 
         {/* Skills Section */}

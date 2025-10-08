@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ColumnDef } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { withCacheClearing } from '@/lib/cache-service';
 import { DataTable, SearchableField } from "@/components/ui/data-table";
 
 interface Experience {
@@ -141,8 +142,11 @@ const ExperienceAdminPage = () => {
   // Handle individual delete
   const handleDelete = async (id: number) => {
     try {
-      await experienceService.deleteExperience(id);
-      setExperiences(prev => prev.filter(exp => exp.id !== id));
+      await withCacheClearing(async () => {
+        await experienceService.deleteExperience(id);
+        setExperiences(prev => prev.filter(exp => exp.id !== id));
+        return true;
+      }, 'Experience deletion');
     } catch (err: any) {
       console.error('Error deleting experience:', err);
       setError('Failed to delete experience');
@@ -155,10 +159,13 @@ const ExperienceAdminPage = () => {
     
     setIsMassActionLoading(true);
     try {
-      await experienceService.massDeleteExperiences(selectedRows);
-      const deletedIds = selectedRows.map(exp => exp.id);
-      setExperiences(prev => prev.filter(exp => !deletedIds.includes(exp.id)));
-      setSelectedRows([]);
+      await withCacheClearing(async () => {
+        await experienceService.massDeleteExperiences(selectedRows);
+        const deletedIds = selectedRows.map(exp => exp.id);
+        setExperiences(prev => prev.filter(exp => !deletedIds.includes(exp.id)));
+        setSelectedRows([]);
+        return true;
+      }, 'Mass experience deletion');
     } catch (error) {
       console.error('Error deleting experiences:', error);
       setError('Failed to delete some experiences');

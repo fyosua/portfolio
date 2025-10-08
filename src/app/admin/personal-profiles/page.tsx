@@ -7,6 +7,7 @@ import { DataTable, SearchableField } from '@/components/ui/data-table';
 import { createProfileColumns } from './ProfileTableColumns';
 import { MassDeleteButton } from './ProfileDialogs';
 import { ProfileForm, MassUpdateForm } from './ProfileForms';
+import { withCacheClearing } from '@/lib/cache-service';
 
 // Types
 interface Profile {
@@ -253,32 +254,35 @@ export default function PersonalProfilesAdminPage() {
 
     setIsSaving(true);
     try {
-      const profileData = {
-        name: formData.name.trim(),
-        title: formData.title.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        linkedin: formData.linkedin.trim(),
-      };
-
-      const newProfile = await profileService.createProfile(profileData);
-
-      let newPersonalInfo = undefined;
-      if (formData.dob || formData.nationality) {
-        const personalInfoData = {
-          dob: formData.dob,
-          nationality: formData.nationality.trim(),
+      await withCacheClearing(async () => {
+        const profileData = {
+          name: formData.name.trim(),
+          title: formData.title.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          linkedin: formData.linkedin.trim(),
         };
-        newPersonalInfo = await profileService.createPersonalInfo(personalInfoData);
-      }
 
-      const combinedProfile: CombinedProfile = {
-        ...newProfile,
-        personalInfo: newPersonalInfo
-      };
+        const newProfile = await profileService.createProfile(profileData);
 
-      setProfiles(prev => [...prev, combinedProfile]);
-      resetForm();
+        let newPersonalInfo = undefined;
+        if (formData.dob || formData.nationality) {
+          const personalInfoData = {
+            dob: formData.dob,
+            nationality: formData.nationality.trim(),
+          };
+          newPersonalInfo = await profileService.createPersonalInfo(personalInfoData);
+        }
+
+        const combinedProfile: CombinedProfile = {
+          ...newProfile,
+          personalInfo: newPersonalInfo
+        };
+
+        setProfiles(prev => [...prev, combinedProfile]);
+        resetForm();
+        return combinedProfile;
+      }, 'Profile creation');
     } catch (error) {
       console.error('Error adding profile:', error);
       setError('Failed to add profile');
@@ -292,39 +296,42 @@ export default function PersonalProfilesAdminPage() {
 
     setIsSaving(true);
     try {
-      const profileData = {
-        name: formData.name.trim(),
-        title: formData.title.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        linkedin: formData.linkedin.trim(),
-      };
-
-      const updatedProfile = await profileService.updateProfile(editProfile.id, profileData);
-
-      let updatedPersonalInfo = editProfile.personalInfo;
-      if (formData.dob || formData.nationality) {
-        const personalInfoData = {
-          dob: formData.dob,
-          nationality: formData.nationality.trim(),
+      await withCacheClearing(async () => {
+        const profileData = {
+          name: formData.name.trim(),
+          title: formData.title.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          linkedin: formData.linkedin.trim(),
         };
 
-        if (editProfile.personalInfo) {
-          updatedPersonalInfo = await profileService.updatePersonalInfo(editProfile.personalInfo.id, personalInfoData);
-        } else {
-          updatedPersonalInfo = await profileService.createPersonalInfo(personalInfoData);
+        const updatedProfile = await profileService.updateProfile(editProfile.id, profileData);
+
+        let updatedPersonalInfo = editProfile.personalInfo;
+        if (formData.dob || formData.nationality) {
+          const personalInfoData = {
+            dob: formData.dob,
+            nationality: formData.nationality.trim(),
+          };
+
+          if (editProfile.personalInfo) {
+            updatedPersonalInfo = await profileService.updatePersonalInfo(editProfile.personalInfo.id, personalInfoData);
+          } else {
+            updatedPersonalInfo = await profileService.createPersonalInfo(personalInfoData);
+          }
         }
-      }
 
-      const combinedProfile: CombinedProfile = {
-        ...updatedProfile,
-        personalInfo: updatedPersonalInfo
-      };
+        const combinedProfile: CombinedProfile = {
+          ...updatedProfile,
+          personalInfo: updatedPersonalInfo
+        };
 
-      setProfiles(prev => prev.map(profile => 
-        profile.id === editProfile.id ? combinedProfile : profile
-      ));
-      resetForm();
+        setProfiles(prev => prev.map(profile => 
+          profile.id === editProfile.id ? combinedProfile : profile
+        ));
+        resetForm();
+        return combinedProfile;
+      }, 'Profile update');
     } catch (error) {
       console.error('Error updating profile:', error);
       setError('Failed to update profile');
@@ -335,14 +342,17 @@ export default function PersonalProfilesAdminPage() {
 
   const handleDeleteProfile = async (id: number) => {
     try {
-      const profile = profiles.find(p => p.id === id);
-      if (profile) {
-        await profileService.deleteProfile(id);
-        if (profile.personalInfo) {
-          await profileService.deletePersonalInfo(profile.personalInfo.id);
+      await withCacheClearing(async () => {
+        const profile = profiles.find(p => p.id === id);
+        if (profile) {
+          await profileService.deleteProfile(id);
+          if (profile.personalInfo) {
+            await profileService.deletePersonalInfo(profile.personalInfo.id);
+          }
+          setProfiles(prev => prev.filter(profile => profile.id !== id));
         }
-        setProfiles(prev => prev.filter(profile => profile.id !== id));
-      }
+        return true;
+      }, 'Profile deletion');
     } catch (error) {
       console.error('Error deleting profile:', error);
       setError('Failed to delete profile');
@@ -354,10 +364,13 @@ export default function PersonalProfilesAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      await profileService.massDeleteProfiles(selectedRows);
-      const deletedIds = selectedRows.map(profile => profile.id);
-      setProfiles(prev => prev.filter(profile => !deletedIds.includes(profile.id)));
-      setSelectedRows([]);
+      await withCacheClearing(async () => {
+        await profileService.massDeleteProfiles(selectedRows);
+        const deletedIds = selectedRows.map(profile => profile.id);
+        setProfiles(prev => prev.filter(profile => !deletedIds.includes(profile.id)));
+        setSelectedRows([]);
+        return true;
+      }, 'Mass profile deletion');
     } catch (error) {
       console.error('Error deleting profiles:', error);
       setError('Failed to delete some profiles');
@@ -371,41 +384,44 @@ export default function PersonalProfilesAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      const updatePromises = selectedRows.map(async (profile) => {
-        const profileData = {
-          ...profile,
-          title: massUpdateData.title || profile.title,
-        };
-        
-        const updatedProfile = await profileService.updateProfile(profile.id, profileData);
-        
-        let updatedPersonalInfo = profile.personalInfo;
-        if (profile.personalInfo && massUpdateData.nationality) {
-          const personalInfoData = {
-            ...profile.personalInfo,
-            nationality: massUpdateData.nationality,
+      await withCacheClearing(async () => {
+        const updatePromises = selectedRows.map(async (profile) => {
+          const profileData = {
+            ...profile,
+            title: massUpdateData.title || profile.title,
           };
-          updatedPersonalInfo = await profileService.updatePersonalInfo(profile.personalInfo.id, personalInfoData);
-        }
+          
+          const updatedProfile = await profileService.updateProfile(profile.id, profileData);
+          
+          let updatedPersonalInfo = profile.personalInfo;
+          if (profile.personalInfo && massUpdateData.nationality) {
+            const personalInfoData = {
+              ...profile.personalInfo,
+              nationality: massUpdateData.nationality,
+            };
+            updatedPersonalInfo = await profileService.updatePersonalInfo(profile.personalInfo.id, personalInfoData);
+          }
 
-        return {
-          ...updatedProfile,
-          personalInfo: updatedPersonalInfo
-        };
-      });
+          return {
+            ...updatedProfile,
+            personalInfo: updatedPersonalInfo
+          };
+        });
 
-      const updatedProfiles = await Promise.all(updatePromises);
-      
-      setProfiles(prev => 
-        prev.map(profile => {
-          const updated = updatedProfiles.find(updated => updated.id === profile.id);
-          return updated || profile;
-        })
-      );
-      
-      setSelectedRows([]);
-      setShowMassUpdate(false);
-      setMassUpdateData({ title: '', nationality: '' });
+        const updatedProfiles = await Promise.all(updatePromises);
+        
+        setProfiles(prev => 
+          prev.map(profile => {
+            const updated = updatedProfiles.find(updated => updated.id === profile.id);
+            return updated || profile;
+          })
+        );
+        
+        setSelectedRows([]);
+        setShowMassUpdate(false);
+        setMassUpdateData({ title: '', nationality: '' });
+        return updatedProfiles;
+      }, 'Mass profile update');
     } catch (error) {
       console.error('Error updating profiles:', error);
       setError('Failed to update some profiles');

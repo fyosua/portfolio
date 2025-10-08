@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ExperienceForm from '../ExperienceForm';
+import { withCacheClearing } from '@/lib/cache-service';
 
 const NewExperiencePage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,24 +21,27 @@ const NewExperiencePage = () => {
     const payload = data;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences`, {
-        method: 'POST',
-        headers: {
-          // Use the correct Content-Type for API Platform
-          'Content-Type': 'application/ld+json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      await withCacheClearing(async () => {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/experiences`, {
+          method: 'POST',
+          headers: {
+            // Use the correct Content-Type for API Platform
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("API Error:", errorData);
-        // Use the specific error from Hydra if available
-        throw new Error(errorData['hydra:description'] || 'Failed to create experience.');
-      }
-      
-      router.push('/admin/experience');
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("API Error:", errorData);
+          // Use the specific error from Hydra if available
+          throw new Error(errorData['hydra:description'] || 'Failed to create experience.');
+        }
+        
+        router.push('/admin/experience');
+        return true;
+      }, 'Experience creation');
     } catch (err: any) {
       setError(err.message);
     } finally {

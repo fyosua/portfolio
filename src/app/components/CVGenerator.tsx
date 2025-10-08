@@ -36,11 +36,29 @@ async function getAllData() {
       return dateB.getTime() - dateA.getTime();
     });
 
+    // Sort education by period (most recent first) - using simple string comparison for period
+    const sortedEducation = (eduData['hydra:member'] || []).sort((a: any, b: any) => {
+      // Extract end year from period string (e.g., "2015 - 2019" or "Sep 2015 - Jun 2019")
+      const extractEndYear = (period: string) => {
+        const parts = period.split(' - ');
+        if (parts.length === 2) {
+          const endPart = parts[1].trim();
+          const year = endPart.match(/\d{4}/);
+          return year ? parseInt(year[0]) : 0;
+        }
+        return 0;
+      };
+      
+      const yearA = extractEndYear(a.period || '');
+      const yearB = extractEndYear(b.period || '');
+      return yearB - yearA; // Most recent first
+    });
+
     return {
       profile: profileData['hydra:member']?.[0],
       aboutContent: aboutData['hydra:member']?.[0]?.content,
       experiences: sortedExperiences,
-      education: eduData['hydra:member']?.[0],
+      education: sortedEducation, // Use sorted education
       skillsByCategory,
       languages: langData['hydra:member'],
       personalInfo: personalInfoData['hydra:member']?.[0],

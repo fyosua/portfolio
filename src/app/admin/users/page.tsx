@@ -7,6 +7,7 @@ import { DataTable, SearchableField } from '@/components/ui/data-table';
 import { createUserColumns } from './UserTableColumns';
 import { MassDeleteButton } from './UserDialogs';
 import { UserForm, ChangePasswordForm, MassChangePasswordForm } from './UserForms';
+import { withCacheClearing } from '@/lib/cache-service';
 
 // Types
 interface User {
@@ -38,6 +39,11 @@ const getAuthHeaders = () => {
 const getAuthHeadersWithContent = () => ({
   ...getAuthHeaders(),
   'Content-Type': 'application/ld+json',
+});
+
+const getAuthHeadersWithMergePatch = () => ({
+  ...getAuthHeaders(),
+  'Content-Type': 'application/merge-patch+json',
 });
 
 const userService = {
@@ -72,7 +78,7 @@ const userService = {
   async changePassword(id: number, password: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: 'PATCH',
-      headers: getAuthHeadersWithContent(),
+      headers: getAuthHeadersWithMergePatch(),
       body: JSON.stringify({ password }),
     });
 
@@ -178,15 +184,18 @@ export default function UsersAdminPage() {
 
     setIsSaving(true);
     try {
-      const userData = {
-        email: registerData.email.trim(),
-        password: registerData.password,
-      };
+      await withCacheClearing(async () => {
+        const userData = {
+          email: registerData.email.trim(),
+          password: registerData.password,
+        };
 
-      const newUser = await userService.registerUser(userData);
-      setUsers(prev => [...prev, newUser]);
-      resetRegisterForm();
-      setError(null);
+        const newUser = await userService.registerUser(userData);
+        setUsers(prev => [...prev, newUser]);
+        resetRegisterForm();
+        setError(null);
+        return newUser;
+      }, 'User registration');
     } catch (error) {
       console.error('Error registering user:', error);
       setError(error instanceof Error ? error.message : 'Failed to register user');
@@ -203,9 +212,12 @@ export default function UsersAdminPage() {
 
     setIsSaving(true);
     try {
-      await userService.changePassword(changePasswordUser.id, passwordData.password);
-      resetPasswordForm();
-      setError(null);
+      await withCacheClearing(async () => {
+        await userService.changePassword(changePasswordUser.id, passwordData.password);
+        resetPasswordForm();
+        setError(null);
+        return 'Password changed';
+      }, 'Password change');
     } catch (error) {
       console.error('Error changing password:', error);
       setError(error instanceof Error ? error.message : 'Failed to change password');
@@ -222,9 +234,12 @@ export default function UsersAdminPage() {
     }
 
     try {
-      await userService.deleteUser(id);
-      setUsers(prev => prev.filter(user => user.id !== id));
-      setError(null);
+      await withCacheClearing(async () => {
+        await userService.deleteUser(id);
+        setUsers(prev => prev.filter(user => user.id !== id));
+        setError(null);
+        return 'User deleted';
+      }, 'User deletion');
     } catch (error) {
       console.error('Error deleting user:', error);
       setError('Failed to delete user');
@@ -243,11 +258,14 @@ export default function UsersAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      await userService.massDeleteUsers(selectedRows);
-      const deletedIds = selectedRows.map(user => user.id);
-      setUsers(prev => prev.filter(user => !deletedIds.includes(user.id)));
-      setSelectedRows([]);
-      setError(null);
+      await withCacheClearing(async () => {
+        await userService.massDeleteUsers(selectedRows);
+        const deletedIds = selectedRows.map(user => user.id);
+        setUsers(prev => prev.filter(user => !deletedIds.includes(user.id)));
+        setSelectedRows([]);
+        setError(null);
+        return selectedRows;
+      }, 'Mass user deletion');
     } catch (error) {
       console.error('Error deleting users:', error);
       setError('Failed to delete some users');
@@ -264,11 +282,14 @@ export default function UsersAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      await userService.massChangePassword(selectedRows, massPasswordData.password);
-      setSelectedRows([]);
-      setShowMassChangePassword(false);
-      setMassPasswordData({ password: '', confirmPassword: '' });
-      setError(null);
+      await withCacheClearing(async () => {
+        await userService.massChangePassword(selectedRows, massPasswordData.password);
+        setSelectedRows([]);
+        setShowMassChangePassword(false);
+        setMassPasswordData({ password: '', confirmPassword: '' });
+        setError(null);
+        return selectedRows;
+      }, 'Mass password change');
     } catch (error) {
       console.error('Error changing passwords:', error);
       setError('Failed to change some passwords');

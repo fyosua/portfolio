@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { HiOutlinePencil, HiOutlineCheck, HiOutlineX } from 'react-icons/hi';
 import { Button } from '@/components/ui/button';
+import { withCacheClearing } from '@/lib/cache-service';
 
 interface About {
   '@id': string;
@@ -82,28 +83,33 @@ export default function AboutAdminPage() {
     setError(null);
     
     try {
-      const token = localStorage.getItem('authToken');
+      await withCacheClearing(async () => {
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/abouts/${about.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/ld+json',
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/ld+json',
+          },
+          body: JSON.stringify({
+            content: editContent,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update: ${response.status} ${response.statusText}`);
+        }
+
+        const updatedAbout: About = await response.json();
+        setAbout(updatedAbout);
+        setIsEditing(false);
+        console.log('About updated successfully');
+        
+        return updatedAbout;
+      }, 'About content update');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/abouts/${about.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/ld+json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/ld+json',
-        },
-        body: JSON.stringify({
-          content: editContent,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update: ${response.status} ${response.statusText}`);
-      }
-
-      const updatedAbout: About = await response.json();
-      setAbout(updatedAbout);
-      setIsEditing(false);
-      console.log('About updated successfully');
     } catch (error) {
       console.error('Error updating about:', error);
       setError(error instanceof Error ? error.message : 'Failed to update about');

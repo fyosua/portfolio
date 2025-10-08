@@ -7,6 +7,7 @@ import { DataTable, SearchableField } from '@/components/ui/data-table';
 import { createLanguageColumns } from './LanguageTableColumns';
 import { MassDeleteButton } from './LanguageDialogs';
 import { LanguageForm, MassUpdateForm } from './LanguageForms';
+import { withCacheClearing } from '@/lib/cache-service';
 
 // Types (kept in main file)
 interface Language {
@@ -172,9 +173,12 @@ export default function LanguagesAdminPage() {
 
     setIsSaving(true);
     try {
-      const newLanguage = await languageService.createLanguage(newLanguageName, newLanguageLevel);
-      setLanguages(prev => [...prev, newLanguage]);
-      resetForm();
+      await withCacheClearing(async () => {
+        const newLanguage = await languageService.createLanguage(newLanguageName, newLanguageLevel);
+        setLanguages(prev => [...prev, newLanguage]);
+        resetForm();
+        return newLanguage;
+      }, 'Language creation');
     } catch (error) {
       console.error('Error adding language:', error);
       setError('Failed to add language');
@@ -188,11 +192,14 @@ export default function LanguagesAdminPage() {
 
     setIsSaving(true);
     try {
-      const updatedLanguage = await languageService.updateLanguage(editLanguage.id, newLanguageName, newLanguageLevel);
-      setLanguages(prev => prev.map(lang => 
-        lang.id === editLanguage.id ? updatedLanguage : lang
-      ));
-      resetForm();
+      await withCacheClearing(async () => {
+        const updatedLanguage = await languageService.updateLanguage(editLanguage.id, newLanguageName, newLanguageLevel);
+        setLanguages(prev => prev.map(lang => 
+          lang.id === editLanguage.id ? updatedLanguage : lang
+        ));
+        resetForm();
+        return updatedLanguage;
+      }, 'Language update');
     } catch (error) {
       console.error('Error updating language:', error);
       setError('Failed to update language');
@@ -203,8 +210,11 @@ export default function LanguagesAdminPage() {
 
   const handleDeleteLanguage = async (id: number) => {
     try {
-      await languageService.deleteLanguage(id);
-      setLanguages(prev => prev.filter(lang => lang.id !== id));
+      await withCacheClearing(async () => {
+        await languageService.deleteLanguage(id);
+        setLanguages(prev => prev.filter(lang => lang.id !== id));
+        return true;
+      }, 'Language deletion');
     } catch (error) {
       console.error('Error deleting language:', error);
       setError('Failed to delete language');
@@ -216,10 +226,13 @@ export default function LanguagesAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      await languageService.massDeleteLanguages(selectedRows);
-      const deletedIds = selectedRows.map(lang => lang.id);
-      setLanguages(prev => prev.filter(lang => !deletedIds.includes(lang.id)));
-      setSelectedRows([]);
+      await withCacheClearing(async () => {
+        await languageService.massDeleteLanguages(selectedRows);
+        const deletedIds = selectedRows.map(lang => lang.id);
+        setLanguages(prev => prev.filter(lang => !deletedIds.includes(lang.id)));
+        setSelectedRows([]);
+        return true;
+      }, 'Mass language deletion');
     } catch (error) {
       console.error('Error deleting languages:', error);
       setError('Failed to delete some languages');
@@ -233,17 +246,20 @@ export default function LanguagesAdminPage() {
     
     setIsMassActionLoading(true);
     try {
-      const updatedLanguages = await languageService.massUpdateLanguages(selectedRows, massUpdateLevel);
-      setLanguages(prev => 
-        prev.map(lang => {
-          const updated = updatedLanguages.find(updated => updated.id === lang.id);
-          return updated || lang;
-        })
-      );
-      
-      setSelectedRows([]);
-      setShowMassUpdate(false);
-      setMassUpdateLevel('');
+      await withCacheClearing(async () => {
+        const updatedLanguages = await languageService.massUpdateLanguages(selectedRows, massUpdateLevel);
+        setLanguages(prev => 
+          prev.map(lang => {
+            const updated = updatedLanguages.find(updated => updated.id === lang.id);
+            return updated || lang;
+          })
+        );
+        
+        setSelectedRows([]);
+        setShowMassUpdate(false);
+        setMassUpdateLevel('');
+        return updatedLanguages;
+      }, 'Mass language update');
     } catch (error) {
       console.error('Error updating languages:', error);
       setError('Failed to update some languages');
