@@ -43,7 +43,7 @@ export default function Home() {
             {/* Image Container - Mobile responsiveness adjustments */}
             <div className="w-full md:w-1/2 flex justify-center mt-8 md:mt-0">
               <Image
-                src="/images/photo_profile.jpg"
+                src="/images/profile-photo.jpg"
                 alt="Yosua Ferdian"
                 width={400}
                 height={400}
