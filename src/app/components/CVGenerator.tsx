@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import CVTemplate from './CVTemplate';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 // --- Data Fetching Functions ---
 async function getAllData() {
@@ -104,6 +105,13 @@ const CVGenerator = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      // Track download event
+      sendGTMEvent({
+        event: 'download_cv_click',
+        category: 'Engagement',
+        label: 'Resume Download',
+      });
     } catch (err) {
       console.error("Error generating PDF:", err);
       alert('Error generating PDF. Please try again.');

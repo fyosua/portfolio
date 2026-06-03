@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './styles/globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
-import { GTMScript, GTMNoscript } from '../components/analytics/GTM'
+import { GoogleTagManager } from '@next/third-parties/google'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://yosuaf.com'),
@@ -42,10 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Tag Manager */}
-        <GTMScript />
-        
-        {/* Updated anti‑flicker script to honor system as default */}
+        {/* Anti‑flicker script to honor system as default */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -67,11 +64,8 @@ export default function RootLayout({
           }}
         />
       </head>
+      <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
       <body className={`${inter.className}`}>
-        {/* Google Tag Manager (noscript) */}
-        <GTMNoscript />
-        
-        {/* Default theme changed to system */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>
