@@ -27,6 +27,22 @@ GTM is integrated via `@next/third-parties/google` (official Next.js utility):
 |-------|---------|---------|
 | `download_cv_click` | Download CV button click | `{ category: 'Engagement', label: 'Resume Download' }` |
 
+### SPA Tracking
+
+Next.js App Router uses client-side navigation — GTM's default Page View trigger fires only on hard navigation. Configure GTM triggers as **History Change** (Fire On: All History Changes) to capture SPA route transitions.
+
+Events are pushed via `sendGTMEvent()` from `@next/third-parties/google`. GTM variables can read `event`, `category`, and `label` keys from the dataLayer.
+
+### TypeScript
+
+A global type declaration exists at `src/types/gtm.d.ts`:
+
+```ts
+interface Window {
+  dataLayer: Array<Record<string, any>>;
+}
+```
+
 ## Development
 
 ```bash
