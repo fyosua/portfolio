@@ -9,7 +9,28 @@ import CVGenerator from './components/CVGenerator';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import Image from 'next/image';
 
-export default function Home() {
+// Fetch Profile photo from the API (server-side)
+async function getProfilePhoto(): Promise<string | null> {
+  try {
+    const fetchUrl = `${process.env.API_BASE_URL}/api/profiles`;
+    const res = await fetch(fetchUrl, { next: { revalidate: 3600 } });
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+
+    const data = await res.json();
+    const profile = data['hydra:member']?.[0];
+    return profile?.photo || null;
+
+  } catch {
+    return null; // Fall back to static image on error
+  }
+}
+
+export default async function Home() {
+  const profilePhoto = await getProfilePhoto();
+  const photoSrc = profilePhoto || '/images/photo_profile.jpg';
   return (
     <main>
       <Header />
@@ -43,7 +64,7 @@ export default function Home() {
             {/* Image Container - Mobile responsiveness adjustments */}
             <div className="w-full md:w-1/2 flex justify-center mt-8 md:mt-0">
               <Image
-                src="/images/profile-photo.jpg"
+                src={photoSrc}
                 alt="Yosua Ferdian"
                 width={400}
                 height={400}

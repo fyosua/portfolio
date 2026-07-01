@@ -184,7 +184,7 @@ export default function SkillsAdminPage() {
         return updated;
       }, 'Skill category update');
     } catch (error) {
-      console.error('Error updating category:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating category:', error);
     }
   };
 
@@ -216,7 +216,7 @@ export default function SkillsAdminPage() {
         return updated;
       }, 'Skill update');
     } catch (error) {
-      console.error('Error updating skill:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating skill:', error);
     }
   };
 
@@ -232,7 +232,7 @@ export default function SkillsAdminPage() {
         return true;
       }, 'Skill deletion');
     } catch (error) {
-      console.error('Error deleting skill:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting skill:', error);
     }
   };
 
@@ -248,7 +248,7 @@ export default function SkillsAdminPage() {
         return true;
       }, 'Skill category deletion');
     } catch (error) {
-      console.error('Error deleting category:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting category:', error);
     }
   };
 
@@ -274,7 +274,7 @@ export default function SkillsAdminPage() {
         throw new Error('Failed to create category');
       }, 'Skill category creation');
     } catch (error) {
-      console.error('Error creating category:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error creating category:', error);
     }
   };
 
@@ -304,7 +304,7 @@ export default function SkillsAdminPage() {
         throw new Error('Failed to create skill');
       }, 'Skill creation');
     } catch (error) {
-      console.error('Error creating skill:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error creating skill:', error);
     }
   };
 

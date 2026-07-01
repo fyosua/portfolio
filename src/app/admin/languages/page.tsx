@@ -157,7 +157,7 @@ export default function LanguagesAdminPage() {
         const data = await languageService.fetchLanguages();
         setLanguages(data);
       } catch (error) {
-        console.error('Error fetching languages:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('Error fetching languages:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch languages');
       } finally {
         setIsLoading(false);
@@ -180,7 +180,7 @@ export default function LanguagesAdminPage() {
         return newLanguage;
       }, 'Language creation');
     } catch (error) {
-      console.error('Error adding language:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error adding language:', error);
       setError('Failed to add language');
     } finally {
       setIsSaving(false);
@@ -201,7 +201,7 @@ export default function LanguagesAdminPage() {
         return updatedLanguage;
       }, 'Language update');
     } catch (error) {
-      console.error('Error updating language:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating language:', error);
       setError('Failed to update language');
     } finally {
       setIsSaving(false);
@@ -216,7 +216,7 @@ export default function LanguagesAdminPage() {
         return true;
       }, 'Language deletion');
     } catch (error) {
-      console.error('Error deleting language:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting language:', error);
       setError('Failed to delete language');
     }
   };
@@ -234,7 +234,7 @@ export default function LanguagesAdminPage() {
         return true;
       }, 'Mass language deletion');
     } catch (error) {
-      console.error('Error deleting languages:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting languages:', error);
       setError('Failed to delete some languages');
     } finally {
       setIsMassActionLoading(false);
@@ -261,7 +261,7 @@ export default function LanguagesAdminPage() {
         return updatedLanguages;
       }, 'Mass language update');
     } catch (error) {
-      console.error('Error updating languages:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating languages:', error);
       setError('Failed to update some languages');
     } finally {
       setIsMassActionLoading(false);

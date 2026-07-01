@@ -16,14 +16,14 @@ export class CacheService {
       const result = await response.json();
       
       if (result.revalidated) {
-        console.log(`✅ Cache cleared for: ${path}`);
+        if (process.env.NODE_ENV !== 'production') console.log(`✅ Cache cleared for: ${path}`);
         return true;
       } else {
-        console.error('❌ Failed to clear cache:', result.error);
+        if (process.env.NODE_ENV !== 'production') console.error('❌ Failed to clear cache:', result.error);
         return false;
       }
     } catch (error) {
-      console.error('❌ Cache clearing error:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('❌ Cache clearing error:', error);
       return false;
     }
   }
@@ -36,10 +36,9 @@ export class CacheService {
   // Show success/error notification
   static showCacheNotification(success: boolean, operation: string) {
     if (success) {
-      console.log(`✅ ${operation} completed and cache cleared`);
-      // You can add toast notifications here if you have a toast library
+      if (process.env.NODE_ENV !== 'production') console.log(`✅ ${operation} completed and cache cleared`);
     } else {
-      console.warn(`⚠️ ${operation} completed but cache clearing failed`);
+      if (process.env.NODE_ENV !== 'production') console.warn(`⚠️ ${operation} completed but cache clearing failed`);
     }
   }
 
@@ -58,7 +57,7 @@ export class CacheService {
       
       return result;
     } catch (error) {
-      console.error(`❌ ${operationName} failed:`, error);
+      if (process.env.NODE_ENV !== 'production') console.error(`❌ ${operationName} failed:`, error);
       throw error;
     }
   }

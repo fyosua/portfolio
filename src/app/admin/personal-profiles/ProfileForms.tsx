@@ -11,6 +11,7 @@ interface Profile {
   email: string;
   phone: string;
   linkedin: string;
+  photo?: string;
 }
 
 interface PersonalInfo {
@@ -42,6 +43,9 @@ interface ProfileFormProps {
   onFormDataChange: (data: FormData) => void;
   onSave: () => void;
   onCancel: () => void;
+  selectedPhotoFile?: File | null;
+  photoPreview?: string | null;
+  onPhotoChange?: (file: File | null) => void;
 }
 
 export function ProfileForm({ 
@@ -50,10 +54,19 @@ export function ProfileForm({
   isSaving, 
   onFormDataChange, 
   onSave, 
-  onCancel 
+  onCancel,
+  selectedPhotoFile,
+  photoPreview,
+  onPhotoChange,
 }: ProfileFormProps) {
   const handleInputChange = (field: keyof FormData, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onPhotoChange) {
+      onPhotoChange(e.target.files?.[0] || null);
+    }
   };
 
   return (
@@ -80,7 +93,31 @@ export function ProfileForm({
               <HiOutlineUser className="text-blue-500" />
               Profile Information
             </h3>
-            
+
+            {/* Photo Upload */}
+            <div>
+              <label className="admin-label">Profile Photo</label>
+              <div className="flex items-center gap-4">
+                {(photoPreview || profile?.photo) && (
+                  <img
+                    src={photoPreview || `${process.env.NEXT_PUBLIC_API_BASE_URL}${profile?.photo}`}
+                    alt="Profile preview"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                  className="text-gray-400 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
+                />
+              </div>
+              {selectedPhotoFile && (
+                <p className="text-xs text-gray-500 mt-1">{selectedPhotoFile.name}</p>
+              )}
+            </div>
+
             <div>
               <label className="admin-label">Full Name *</label>
               <input

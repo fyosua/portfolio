@@ -41,7 +41,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       
       return response.ok;
     } catch (error) {
-      console.error('Token validation error:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Token validation error:', error);
       return false;
     }
   };
@@ -53,14 +53,14 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       const currentTime = Date.now() / 1000;
       return payload.exp < currentTime;
     } catch (error) {
-      console.error('Error parsing JWT token:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error parsing JWT token:', error);
       return true; // Treat invalid tokens as expired
     }
   };
 
   // Handle logout with cleanup
   const handleLogout = (reason?: string) => {
-    console.log(reason ? `Logout reason: ${reason}` : 'Manual logout');
+    if (process.env.NODE_ENV !== 'production') console.log(reason ? `Logout reason: ${reason}` : 'Manual logout');
     localStorage.removeItem('authToken');
     setProfile(null);
     setIsMobileMenuOpen(false);
@@ -159,7 +159,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           setProfile({ name: user?.name, title: user?.title });
         })
         .catch((error) => {
-          console.error('Profile fetch error:', error);
+          if (process.env.NODE_ENV !== 'production') console.error('Profile fetch error:', error);
           setProfile(null);
         });
     }

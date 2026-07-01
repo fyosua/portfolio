@@ -150,7 +150,7 @@ export default function EducationAdminPage() {
         const educationData = await educationService.fetchEducation();
         setEducation(educationData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('Error fetching data:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setIsLoading(false);
@@ -185,7 +185,7 @@ export default function EducationAdminPage() {
         return newEducation;
       }, 'Education creation');
     } catch (error) {
-      console.error('Error creating education:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error creating education:', error);
       setError(error instanceof Error ? error.message : 'Failed to create education');
     } finally {
       setIsSaving(false);
@@ -218,7 +218,7 @@ export default function EducationAdminPage() {
         return updatedEducation;
       }, 'Education update');
     } catch (error) {
-      console.error('Error updating education:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating education:', error);
       setError(error instanceof Error ? error.message : 'Failed to update education');
     } finally {
       setIsSaving(false);
@@ -234,7 +234,7 @@ export default function EducationAdminPage() {
         return 'Education deleted';
       }, 'Education deletion');
     } catch (error) {
-      console.error('Error deleting education:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting education:', error);
       setError('Failed to delete education');
     }
   };
@@ -253,7 +253,7 @@ export default function EducationAdminPage() {
         return selectedRows;
       }, 'Mass education deletion');
     } catch (error) {
-      console.error('Error deleting education entries:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting education entries:', error);
       setError('Failed to delete some education entries');
     } finally {
       setIsMassActionLoading(false);

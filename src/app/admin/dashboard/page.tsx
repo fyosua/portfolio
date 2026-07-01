@@ -50,7 +50,7 @@ async function getAllCVData() {
       personalInfo: personalInfoData['hydra:member']?.[0],
     };
   } catch (error) {
-    console.error("Failed to fetch data for CV", error);
+    if (process.env.NODE_ENV !== 'production') console.error("Failed to fetch data for CV", error);
     return null;
   }
 }

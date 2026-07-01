@@ -128,7 +128,7 @@ const ExperienceAdminPage = () => {
       const data = await experienceService.fetchExperiences();
       setExperiences(data);
     } catch (err: any) {
-      console.error('Error fetching experiences:', err);
+      if (process.env.NODE_ENV !== 'production') console.error('Error fetching experiences:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -148,7 +148,7 @@ const ExperienceAdminPage = () => {
         return true;
       }, 'Experience deletion');
     } catch (err: any) {
-      console.error('Error deleting experience:', err);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting experience:', err);
       setError('Failed to delete experience');
     }
   };
@@ -167,7 +167,7 @@ const ExperienceAdminPage = () => {
         return true;
       }, 'Mass experience deletion');
     } catch (error) {
-      console.error('Error deleting experiences:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting experiences:', error);
       setError('Failed to delete some experiences');
     } finally {
       setIsMassActionLoading(false);

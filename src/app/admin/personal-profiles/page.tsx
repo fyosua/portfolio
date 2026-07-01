@@ -19,6 +19,7 @@ interface Profile {
   email: string;
   phone: string;
   linkedin: string;
+  photo?: string;
 }
 
 interface PersonalInfo {
@@ -182,6 +183,28 @@ const profileService = {
 
     await Promise.all(deletePromises);
   },
+
+  async uploadProfilePhoto(id: number, file: File): Promise<{ photo: string }> {
+    const token = localStorage.getItem('authToken');
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/profiles/${id}/photo`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/ld+json',
+        // NOTE: do NOT set Content-Type — let the browser set the multipart boundary
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload photo');
+    }
+
+    return response.json();
+  },
 };
 
 export default function PersonalProfilesAdminPage() {
@@ -202,6 +225,10 @@ export default function PersonalProfilesAdminPage() {
     nationality: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Photo upload states
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   // Mass action states
   const [selectedRows, setSelectedRows] = useState<CombinedProfile[]>([]);
@@ -238,7 +265,7 @@ export default function PersonalProfilesAdminPage() {
 
         setProfiles(combinedProfiles);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('Error fetching data:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setIsLoading(false);
@@ -249,6 +276,17 @@ export default function PersonalProfilesAdminPage() {
   }, []);
 
   // Handlers
+  const handlePhotoChange = (file: File | null) => {
+    setSelectedPhotoFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPhotoPreview(null);
+    }
+  };
+
   const handleAddProfile = async () => {
     if (!formData.name.trim() || !formData.email.trim()) return;
 
@@ -264,6 +302,11 @@ export default function PersonalProfilesAdminPage() {
         };
 
         const newProfile = await profileService.createProfile(profileData);
+
+        // Upload photo after profile creation
+        if (selectedPhotoFile) {
+          await profileService.uploadProfilePhoto(newProfile.id, selectedPhotoFile);
+        }
 
         let newPersonalInfo = undefined;
         if (formData.dob || formData.nationality) {
@@ -284,7 +327,7 @@ export default function PersonalProfilesAdminPage() {
         return combinedProfile;
       }, 'Profile creation');
     } catch (error) {
-      console.error('Error adding profile:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error adding profile:', error);
       setError('Failed to add profile');
     } finally {
       setIsSaving(false);
@@ -306,6 +349,11 @@ export default function PersonalProfilesAdminPage() {
         };
 
         const updatedProfile = await profileService.updateProfile(editProfile.id, profileData);
+
+        // Upload photo after profile update
+        if (selectedPhotoFile) {
+          await profileService.uploadProfilePhoto(editProfile.id, selectedPhotoFile);
+        }
 
         let updatedPersonalInfo = editProfile.personalInfo;
         if (formData.dob || formData.nationality) {
@@ -333,7 +381,7 @@ export default function PersonalProfilesAdminPage() {
         return combinedProfile;
       }, 'Profile update');
     } catch (error) {
-      console.error('Error updating profile:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating profile:', error);
       setError('Failed to update profile');
     } finally {
       setIsSaving(false);
@@ -354,7 +402,7 @@ export default function PersonalProfilesAdminPage() {
         return true;
       }, 'Profile deletion');
     } catch (error) {
-      console.error('Error deleting profile:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting profile:', error);
       setError('Failed to delete profile');
     }
   };
@@ -372,7 +420,7 @@ export default function PersonalProfilesAdminPage() {
         return true;
       }, 'Mass profile deletion');
     } catch (error) {
-      console.error('Error deleting profiles:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting profiles:', error);
       setError('Failed to delete some profiles');
     } finally {
       setIsMassActionLoading(false);
@@ -423,7 +471,7 @@ export default function PersonalProfilesAdminPage() {
         return updatedProfiles;
       }, 'Mass profile update');
     } catch (error) {
-      console.error('Error updating profiles:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating profiles:', error);
       setError('Failed to update some profiles');
     } finally {
       setIsMassActionLoading(false);
@@ -442,6 +490,9 @@ export default function PersonalProfilesAdminPage() {
       nationality: profile.personalInfo?.nationality || '',
     });
     setShowAddProfile(false);
+    // Reset photo state
+    setSelectedPhotoFile(null);
+    setPhotoPreview(null);
   };
 
   const resetForm = () => {
@@ -456,6 +507,8 @@ export default function PersonalProfilesAdminPage() {
       dob: '',
       nationality: '',
     });
+    setSelectedPhotoFile(null);
+    setPhotoPreview(null);
     setError(null);
   };
 
@@ -615,6 +668,9 @@ export default function PersonalProfilesAdminPage() {
           onFormDataChange={setFormData}
           onSave={editProfile ? handleEditProfile : handleAddProfile}
           onCancel={resetForm}
+          selectedPhotoFile={selectedPhotoFile}
+          photoPreview={photoPreview}
+          onPhotoChange={handlePhotoChange}
         />
       )}
 

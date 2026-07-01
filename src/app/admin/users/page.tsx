@@ -159,13 +159,13 @@ export default function UsersAdminPage() {
           const payload = JSON.parse(atob(token.split('.')[1]));
           setCurrentUserEmail(payload.email || '');
         } catch (e) {
-          console.error('Error parsing token:', e);
+          if (process.env.NODE_ENV !== 'production') console.error('Error parsing token:', e);
         }
 
         const usersData = await userService.fetchUsers();
         setUsers(usersData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('Error fetching data:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setIsLoading(false);
@@ -197,7 +197,7 @@ export default function UsersAdminPage() {
         return newUser;
       }, 'User registration');
     } catch (error) {
-      console.error('Error registering user:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error registering user:', error);
       setError(error instanceof Error ? error.message : 'Failed to register user');
     } finally {
       setIsSaving(false);
@@ -219,7 +219,7 @@ export default function UsersAdminPage() {
         return 'Password changed';
       }, 'Password change');
     } catch (error) {
-      console.error('Error changing password:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error changing password:', error);
       setError(error instanceof Error ? error.message : 'Failed to change password');
     } finally {
       setIsSaving(false);
@@ -241,7 +241,7 @@ export default function UsersAdminPage() {
         return 'User deleted';
       }, 'User deletion');
     } catch (error) {
-      console.error('Error deleting user:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting user:', error);
       setError('Failed to delete user');
     }
   };
@@ -267,7 +267,7 @@ export default function UsersAdminPage() {
         return selectedRows;
       }, 'Mass user deletion');
     } catch (error) {
-      console.error('Error deleting users:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error deleting users:', error);
       setError('Failed to delete some users');
     } finally {
       setIsMassActionLoading(false);
@@ -291,7 +291,7 @@ export default function UsersAdminPage() {
         return selectedRows;
       }, 'Mass password change');
     } catch (error) {
-      console.error('Error changing passwords:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error changing passwords:', error);
       setError('Failed to change some passwords');
     } finally {
       setIsMassActionLoading(false);

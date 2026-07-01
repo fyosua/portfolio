@@ -65,7 +65,7 @@ export default function AboutAdminPage() {
           setError('No about content found');
         }
       } catch (error) {
-        console.error('Error fetching about:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('Error fetching about:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch about data');
       } finally {
         setIsLoading(false);
@@ -105,13 +105,13 @@ export default function AboutAdminPage() {
         const updatedAbout: About = await response.json();
         setAbout(updatedAbout);
         setIsEditing(false);
-        console.log('About updated successfully');
+        if (process.env.NODE_ENV !== 'production') console.log('About updated successfully');
         
         return updatedAbout;
       }, 'About content update');
       
     } catch (error) {
-      console.error('Error updating about:', error);
+      if (process.env.NODE_ENV !== 'production') console.error('Error updating about:', error);
       setError(error instanceof Error ? error.message : 'Failed to update about');
     } finally {
       setIsSaving(false);

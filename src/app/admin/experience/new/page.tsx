@@ -34,7 +34,7 @@ const NewExperiencePage = () => {
 
         if (!res.ok) {
           const errorData = await res.json();
-          console.error("API Error:", errorData);
+          if (process.env.NODE_ENV !== 'production') console.error("API Error:", errorData);
           // Use the specific error from Hydra if available
           throw new Error(errorData['hydra:description'] || 'Failed to create experience.');
         }
